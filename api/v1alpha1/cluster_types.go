@@ -23,42 +23,44 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// CodeRepoSpec defines the desired state of CodeRepo
-type CodeRepoSpec struct {
+// ClusterSpec defines the desired state of Cluster
+type ClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	CodeRepoProvider string `json:"coderepoprovider"`
-	Product          string `json:"product"`
-	URL              string `json:"url,omitempty"`
+	URL         string `json:"url,omitempty"`
+	ApiServer   string `json:"apiServer,omitempty"`
+	ClusterType string `json:"clustertype,omitempty"`
+	HostCluster string `json:"hostcluster"`
+	Provider    string `json:"provider"`
 }
 
-// CodeRepoStatus defines the observed state of CodeRepo
-type CodeRepoStatus struct {
+// ClusterStatus defines the observed state of Cluster
+type ClusterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // +kubebuilder:object:root=true
 
-// CodeRepo is the Schema for the coderepoes API
-type CodeRepo struct {
+// Cluster is the Schema for the clusters API
+type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CodeRepoSpec   `json:"spec,omitempty"`
-	Status CodeRepoStatus `json:"status,omitempty"`
+	Spec   ClusterSpec   `json:"spec,omitempty"`
+	Status ClusterStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// CodeRepoList contains a list of CodeRepo
-type CodeRepoList struct {
+// ClusterList contains a list of Cluster
+type ClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []CodeRepo `json:"items"`
+	Items           []Cluster `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&CodeRepo{}, &CodeRepoList{})
+	SchemeBuilder.Register(&Cluster{}, &ClusterList{})
 }
