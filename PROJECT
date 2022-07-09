@@ -1,0 +1,7 @@
+domain: nautes.io
+repo: argo-operator
+resources:
+- group: resource
+  kind: CodeRepo
+  version: v1alpha1
+version: "2"
