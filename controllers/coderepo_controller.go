@@ -36,7 +36,6 @@ type CodeRepoReconciler struct {
 
 // +kubebuilder:rbac:groups=resource.nautes.io,resources=coderepoes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=resource.nautes.io,resources=coderepoes/status,verbs=get;update;patch
-
 func (r *CodeRepoReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
 	_ = r.Log.WithValues("coderepo", req.NamespacedName)
