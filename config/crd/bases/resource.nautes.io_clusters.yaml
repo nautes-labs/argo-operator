@@ -6,18 +6,18 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
   creationTimestamp: null
-  name: coderepoes.resource.nautes.io
+  name: clusters.resource.nautes.io
 spec:
   group: resource.nautes.io
   names:
-    kind: CodeRepo
-    listKind: CodeRepoList
-    plural: coderepoes
-    singular: coderepo
+    kind: Cluster
+    listKind: ClusterList
+    plural: clusters
+    singular: cluster
   scope: Namespaced
   validation:
     openAPIV3Schema:
-      description: CodeRepo is the Schema for the coderepoes API
+      description: Cluster is the Schema for the clusters API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -32,20 +32,24 @@ spec:
         metadata:
           type: object
         spec:
-          description: CodeRepoSpec defines the desired state of CodeRepo
+          description: ClusterSpec defines the desired state of Cluster
           properties:
-            coderepoprovider:
+            apiServer:
               type: string
-            product:
+            clustertype:
+              type: string
+            hostcluster:
+              type: string
+            provider:
               type: string
             url:
               type: string
           required:
-          - coderepoprovider
-          - product
+          - hostcluster
+          - provider
           type: object
         status:
-          description: CodeRepoStatus defines the observed state of CodeRepo
+          description: ClusterStatus defines the observed state of Cluster
           type: object
       type: object
   version: v1alpha1
