@@ -1,8 +1,12 @@
 apiVersion: resource.nautes.io/v1alpha1
 kind: Cluster
 metadata:
-  name: cluster-sample
-  url: ""
-  clustertype: ""
-  hostcluster: ""
-  provider: ""
+  name: pipeline1-runtime
+  namespace: argocd
+spec:
+  name: "pipeline1-runtime"
+  # apiserver: "https://pipeline1.bluzin.io:30443"
+  apiserver: "https://10.204.118.217:30543"
+  clustertype: "virtual"
+  hostcluster: "tenant1"
+  provider: "local"

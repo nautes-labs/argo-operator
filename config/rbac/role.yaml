@@ -7,25 +7,6 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - apps
-  resources:
-  - deployments
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - get
-  - list
-- apiGroups:
   - resource.nautes.io
   resources:
   - clusters
@@ -37,6 +18,12 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - resource.nautes.io
+  resources:
+  - clusters/finalizers
+  verbs:
+  - update
 - apiGroups:
   - resource.nautes.io
   resources:
@@ -57,6 +44,12 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - resource.nautes.io
+  resources:
+  - coderepoes/finalizers
+  verbs:
+  - update
 - apiGroups:
   - resource.nautes.io
   resources:
