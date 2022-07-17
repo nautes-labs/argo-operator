@@ -1,5 +1,5 @@
 /*
-
+Copyright 2022.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,9 +28,10 @@ type ClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	URL         string `json:"url,omitempty"`
-	ApiServer   string `json:"apiServer,omitempty"`
-	ClusterType string `json:"clustertype,omitempty"`
+	// Foo is an example field of Cluster. Edit cluster_types.go to remove/update
+	Name        string `json:"name,omitempty"`
+	ApiServer   string `json:"apiserver"`
+	ClusterType string `json:"clustertype"`
 	HostCluster string `json:"hostcluster"`
 	Provider    string `json:"provider"`
 }
@@ -39,9 +40,11 @@ type ClusterSpec struct {
 type ClusterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Sync bool `json:"sync"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // Cluster is the Schema for the clusters API
 type Cluster struct {
@@ -52,7 +55,7 @@ type Cluster struct {
 	Status ClusterStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // ClusterList contains a list of Cluster
 type ClusterList struct {

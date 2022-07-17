@@ -1,5 +1,5 @@
 /*
-
+Copyright 2022.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,9 +28,8 @@ type CodeRepoSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	CodeRepoProvider string `json:"coderepoprovider"`
-	Product          string `json:"product"`
-	URL              string `json:"url,omitempty"`
+	// Foo is an example field of CodeRepo. Edit coderepo_types.go to remove/update
+	Foo string `json:"foo,omitempty"`
 }
 
 // CodeRepoStatus defines the observed state of CodeRepo
@@ -39,7 +38,8 @@ type CodeRepoStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // CodeRepo is the Schema for the coderepoes API
 type CodeRepo struct {
@@ -50,7 +50,7 @@ type CodeRepo struct {
 	Status CodeRepoStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // CodeRepoList contains a list of CodeRepo
 type CodeRepoList struct {
