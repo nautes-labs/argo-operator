@@ -1,0 +1,14 @@
+apiVersion: nautes.resource.nautes.io/v1alpha1
+kind: CodeRepoProvider
+metadata:
+  name: coderepoprovider
+  namespace: nautes
+spec:
+  # API access address for git platform
+  apiserver: ""
+  # The access address of the git platform
+  httpsAddress: ""
+  # Git platform type
+  providerType: gitlab
+  # SSH repository prefix for Git platform
+  sshAddress: ""

@@ -1,0 +1,16 @@
+apiVersion: nautes.resource.nautes.io/v1alpha1
+kind: Cluster
+metadata:
+  name: cluster
+  namespace: nautes
+spec:
+  # Apiserver for k8s cluster
+  apiserver: ""
+  # Cluster kind
+  clusterKind: "kubernetes"
+  # Cluster type
+  clustertype: ""
+  # Optional, Hosting of virtual clusters
+  hostcluster: ""
+  # Cluster usage
+  usage: ""

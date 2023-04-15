@@ -1,0 +1,22 @@
+apiVersion: nautes.resource.nautes.io/v1alpha1
+kind: CodeRepo
+metadata:
+  name: codeRepo
+  namespace: nautes
+spec:
+  # Provider of Code repository platform information
+  codeRepoProvider: ""
+  # Product information
+  product: ""
+  # Repository name
+  repoName: ""
+  # Optional, Repository url, If not filled in, the operator will obtain it through codeRepoProvider, product, and repoName
+  url: ""
+  # Is it used for pipeline runtime
+  pipelineRuntime: false
+  # Is it used for deployment runtime
+  deploymentRuntime: true
+  # Configuration items for webhook
+  webhook:
+    events:
+      - PushEvents

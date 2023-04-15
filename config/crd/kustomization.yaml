@@ -1,0 +1,3 @@
+resources:
+- bases/nautes.resource.nautes.io_clusters.yaml
+- bases/nautes.resource.nautes.io_coderepoes.yaml
