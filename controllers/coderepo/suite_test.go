@@ -35,6 +35,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -107,7 +108,6 @@ func (f *fakeController) startCodeRepo(argocd *argocd.ArgocdClient, secret secre
 			Client: f.GetClient(),
 			Argocd: argocd,
 			Secret: secret,
-			Config: config,
 			Log:    ctrl.Log.WithName("codeRepo controllertest log"),
 		}).SetupWithManager(f.k8sManager)
 
@@ -162,7 +162,10 @@ func startClusterServer() {
 	//+kubebuilder:scaffold:scheme
 	gomockCtl = gomock.NewController(GinkgoT())
 
-	err = createDefaultNamespace(testKubeconfig)
+	c, err := client.New(testKubeconfig, client.Options{})
+	Expect(err).ShouldNot(HaveOccurred())
+
+	err = createDefaultNamespace(c)
 	Expect(err).NotTo(HaveOccurred())
 }
 
@@ -187,4 +190,19 @@ func createDefaultNamespace(kubeconfig *rest.Config) error {
 	}
 
 	return nil
+}
+
+func createNautesConfigs(kubeconfig *rest.Config) {
+	nautesConfig := nautesconfigs.NautesConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "nautes-config",
+			Namespace: "nautes",
+		},
+		Spec: nautesconfigs.NautesConfigSpec{
+			ClusterName: "nautes-cluster",
+		},
+	}
+
+	err := k8sutil.CreateOrUpdateNautesConfig(nautesConfig, testKubeconfig)
+	Expect(err).NotTo(HaveOccurred())
 }

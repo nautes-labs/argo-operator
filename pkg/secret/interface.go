@@ -11,16 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package secret
 
-type SecretData struct {
-	ID   int
-	Data string
-}
-
-type SecretOptions struct {
-	SecretPath   string
-	SecretEngine string
-	SecretKey    string
+type SecretOperator interface {
+	InitVault(config *VaultConfig) (*VaultClient, error)
+	GetSecret(secretOptions SecretOptions) (*SecretData, error)
+	GetToken(namespace string) (string, error)
 }

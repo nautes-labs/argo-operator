@@ -107,7 +107,6 @@ func (f *fakeController) startCluster(argocd *argocd.ArgocdClient, secret secret
 			Client: f.k8sManager.GetClient(),
 			Argocd: argocd,
 			Secret: secret,
-			Config: config,
 			Log:    ctrl.Log.WithName("cluster controller test log"),
 		}).SetupWithManager(f.k8sManager)
 

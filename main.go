@@ -24,7 +24,6 @@ import (
 	"github.com/nautes-labs/argo-operator/pkg/secret"
 	resourcev1alpha1 "github.com/nautes-labs/pkg/api/v1alpha1"
 	zaplog "github.com/nautes-labs/pkg/pkg/log/zap"
-	nautesconfigs "github.com/nautes-labs/pkg/pkg/nautesconfigs"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -85,20 +84,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	client, err := client.New(mgr.GetConfig(), client.Options{})
-	if err != nil {
-		setupLog.Error(err, "failed to init kubernetes client")
-		os.Exit(1)
-	}
-
-	config := nautesconfigs.NautesConfigs{}
-	nautesConfigs, err := config.GetConfigByClient(client)
-	if err != nil {
-		setupLog.Error(err, "failed to get nautes configs")
-		os.Exit(1)
-	}
-
-	secret, err := secret.NewVaultClient(nautesConfigs)
+	secret, err := secret.NewVaultClient()
 	if err != nil {
 		setupLog.Error(err, "failed to init vault client")
 		os.Exit(1)
@@ -109,7 +95,6 @@ func main() {
 		Scheme: mgr.GetScheme(),
 		Argocd: argocd.NewArgocd(argocdServer),
 		Secret: secret,
-		Config: nautesConfigs,
 		Log:    ctrl.Log.WithName("codeRepo controller log"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CodeRepo")
@@ -121,7 +106,6 @@ func main() {
 		Scheme: mgr.GetScheme(),
 		Argocd: argocd.NewArgocd(argocdServer),
 		Secret: secret,
-		Config: nautesConfigs,
 		Log:    ctrl.Log.WithName("cluster controller log"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Cluster")

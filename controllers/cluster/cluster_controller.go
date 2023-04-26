@@ -27,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
-	nautesconfigs "github.com/nautes-labs/pkg/pkg/nautesconfigs"
 
 	crdv1alpha1 "github.com/nautes-labs/pkg/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -52,7 +51,7 @@ type ClusterReconciler struct {
 	Scheme *runtime.Scheme
 	Argocd *argocd.ArgocdClient
 	Secret secret.SecretOperator
-	Config *nautesconfigs.Config
+	// Config *nautesconfigs.Config
 }
 
 //+kubebuilder:rbac:groups=nautes.resource.nautes.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete

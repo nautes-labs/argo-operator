@@ -21,6 +21,7 @@ import (
 
 	secret "github.com/nautes-labs/argo-operator/pkg/secret"
 	resourcev1alpha1 "github.com/nautes-labs/pkg/api/v1alpha1"
+	nautesconfigs "github.com/nautes-labs/pkg/pkg/nautesconfigs"
 	"k8s.io/kops/pkg/kubeconfig"
 )
 
@@ -35,18 +36,28 @@ type SecretContent struct {
 	PrivateKey string
 }
 
-func (r *CodeRepoReconciler) getSecret(ctx context.Context, codeRepo *resourcev1alpha1.CodeRepo, namespace string) (*SecretContent, error) {
-	gitType := r.Config.Git.GitType
+func (r *CodeRepoReconciler) getSecret(ctx context.Context, codeRepo *resourcev1alpha1.CodeRepo, configs *nautesconfigs.Config) (*SecretContent, error) {
 	secretsEngine := SecretsEngine
 	secretsKey := SecretsKey
-	secretPath := fmt.Sprintf("%s/%s/%s/%s", gitType, codeRepo.Name, "default", "readonly")
+	secretPath := fmt.Sprintf("%s/%s/%s/%s", configs.Git.GitType, codeRepo.Name, "default", "readonly")
 	secretOptions := secret.SecretOptions{
 		SecretPath:   secretPath,
 		SecretEngine: secretsEngine,
 		SecretKey:    secretsKey,
 	}
 
-	secret, err := r.Secret.GetSecret(secretOptions)
+	vaultConfig := &secret.VaultConfig{
+		Addr:         configs.Secret.Vault.Addr,
+		CABundle:     configs.Secret.Vault.CABundle,
+		MountPath:    configs.Secret.Vault.MountPath,
+		OperatorName: configs.Secret.OperatorName,
+	}
+
+	client, err := r.Secret.InitVault(vaultConfig)
+	if err != nil {
+		return nil, err
+	}
+	secret, err := client.GetSecret(secretOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read secret: %w", err)
 	}

@@ -23,8 +23,6 @@ import (
 	argocd "github.com/nautes-labs/argo-operator/pkg/argocd"
 	secret "github.com/nautes-labs/argo-operator/pkg/secret"
 	resourcev1alpha1 "github.com/nautes-labs/pkg/api/v1alpha1"
-
-	nautesconfigs "github.com/nautes-labs/pkg/pkg/nautesconfigs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -43,9 +41,9 @@ type CodeRepoReconciler struct {
 	Scheme *runtime.Scheme
 	Argocd *argocd.ArgocdClient
 	Secret secret.SecretOperator
-	Config *nautesconfigs.Config
-	Log    logr.Logger
-	URL    string
+	// Config *nautesconfigs.Config
+	Log logr.Logger
+	URL string
 }
 
 //+kubebuilder:rbac:groups=nautes.resource.nautes.io,resources=coderepoes;products;coderepoproviders,verbs=get;list;watch;create;update;patch;delete
@@ -116,7 +114,12 @@ func (r *CodeRepoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	r.Log.V(1).Info("Successfully get codeRepo url", ResourceName, codeRepo.Name, "url", url)
 
-	secret, err := r.getSecret(ctx, codeRepo, req.Namespace)
+	nautesConfigs, err := GetNautesConfigs(r.Client)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	secret, err := r.getSecret(ctx, codeRepo, nautesConfigs)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get secret, err: %v", err)
 		r.Log.V(1).Error(err, "failed to get secret", ResourceName, codeRepo.Name)
