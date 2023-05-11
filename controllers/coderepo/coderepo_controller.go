@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	common "github.com/nautes-labs/argo-operator/controllers/common"
 	argocd "github.com/nautes-labs/argo-operator/pkg/argocd"
 	secret "github.com/nautes-labs/argo-operator/pkg/secret"
 	resourcev1alpha1 "github.com/nautes-labs/pkg/api/v1alpha1"
@@ -114,7 +115,7 @@ func (r *CodeRepoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	r.Log.V(1).Info("Successfully get codeRepo url", ResourceName, codeRepo.Name, "url", url)
 
-	nautesConfigs, err := GetNautesConfigs(r.Client)
+	nautesConfigs, err := common.GetNautesConfigs(r.Client)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

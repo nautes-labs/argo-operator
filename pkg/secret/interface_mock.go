@@ -64,12 +64,11 @@ func (mr *MockSecretOperatorMockRecorder) GetToken(namespace interface{}) *gomoc
 }
 
 // InitVault mocks base method.
-func (m *MockSecretOperator) InitVault(config *VaultConfig) (*VaultClient, error) {
+func (m *MockSecretOperator) InitVault(config *VaultConfig) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InitVault", config)
-	ret0, _ := ret[0].(*VaultClient)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // InitVault indicates an expected call of InitVault.

@@ -53,11 +53,11 @@ func (r *CodeRepoReconciler) getSecret(ctx context.Context, codeRepo *resourcev1
 		OperatorName: configs.Secret.OperatorName,
 	}
 
-	client, err := r.Secret.InitVault(vaultConfig)
-	if err != nil {
+	if err := r.Secret.InitVault(vaultConfig); err != nil {
 		return nil, err
 	}
-	secret, err := client.GetSecret(secretOptions)
+
+	secret, err := r.Secret.GetSecret(secretOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read secret: %w", err)
 	}

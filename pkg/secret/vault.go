@@ -54,20 +54,20 @@ func NewVaultClient() (SecretOperator, error) {
 	return &VaultClient{}, nil
 }
 
-func (v *VaultClient) InitVault(config *VaultConfig) (*VaultClient, error) {
+func (v *VaultClient) InitVault(config *VaultConfig) error {
 	httpClient, err := NewHttpClient(config.CABundle)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	token, err := v.GetToken(config.Namespace)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	kubernetesAuth, err := NewKubernetesAuth(config.MountPath, token, config.OperatorName)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	vaultConfig := vault.DefaultConfig()
@@ -76,20 +76,20 @@ func (v *VaultClient) InitVault(config *VaultConfig) (*VaultClient, error) {
 
 	client, err := vault.NewClient(vaultConfig)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	v.client = client
 
 	authInfo, err := client.Auth().Login(context.Background(), kubernetesAuth)
 	if err != nil {
-		return nil, fmt.Errorf("unable to log in with Kubernetes auth: %w", err)
+		return fmt.Errorf("unable to log in with Kubernetes auth: %w", err)
 	}
 
 	if authInfo == nil {
-		return nil, fmt.Errorf("no auth info was returned after login")
+		return fmt.Errorf("no auth info was returned after login")
 	}
 
-	return v, nil
+	return nil
 }
 
 func (s *VaultClient) Logout(client *vault.Client) error {

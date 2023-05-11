@@ -21,6 +21,7 @@ import (
 
 	secret "github.com/nautes-labs/argo-operator/pkg/secret"
 	resourcev1alpha1 "github.com/nautes-labs/pkg/api/v1alpha1"
+	nautesconfigs "github.com/nautes-labs/pkg/pkg/nautesconfigs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kops/pkg/kubeconfig"
 )
@@ -41,7 +42,7 @@ func (r *ClusterReconciler) isSecretChange(cluster *resourcev1alpha1.Cluster, id
 }
 
 // Get stored key and vaule using vault secret
-func (r *ClusterReconciler) getSecret(ctx context.Context, clusterName, namespace string) (*SecretContent, error) {
+func (r *ClusterReconciler) getSecret(ctx context.Context, clusterName, namespace string, configs *nautesconfigs.Config) (*SecretContent, error) {
 	secretPath := fmt.Sprintf("kubernetes/%s/%s/%s", clusterName, "default", "admin")
 	secretsEngine := "cluster"
 	secretsKey := "kubeconfig"
@@ -50,6 +51,17 @@ func (r *ClusterReconciler) getSecret(ctx context.Context, clusterName, namespac
 		SecretPath:   secretPath,
 		SecretEngine: secretsEngine,
 		SecretKey:    secretsKey,
+	}
+
+	vaultConfig := &secret.VaultConfig{
+		Addr:         configs.Secret.Vault.Addr,
+		CABundle:     configs.Secret.Vault.CABundle,
+		MountPath:    configs.Secret.Vault.MountPath,
+		OperatorName: configs.Secret.OperatorName,
+	}
+
+	if err := r.Secret.InitVault(vaultConfig); err != nil {
+		return nil, err
 	}
 
 	secret, err := r.Secret.GetSecret(secretOptions)

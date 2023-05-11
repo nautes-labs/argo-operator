@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	common "github.com/nautes-labs/argo-operator/controllers/common"
 	argocd "github.com/nautes-labs/argo-operator/pkg/argocd"
 	secret "github.com/nautes-labs/argo-operator/pkg/secret"
 	utilString "github.com/nautes-labs/argo-operator/util/strings"
@@ -115,7 +116,12 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	secret, err := r.getSecret(ctx, req.Name, req.Namespace)
+	nautesConfigs, err := common.GetNautesConfigs(r.Client)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	secret, err := r.getSecret(ctx, req.Name, req.Namespace, nautesConfigs)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to get secret, err: %v", err)
 		r.Log.V(1).Error(err, "failed to get secret", ResourceName, cluster.Name)

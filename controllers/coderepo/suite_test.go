@@ -162,25 +162,25 @@ func startClusterServer() {
 	//+kubebuilder:scaffold:scheme
 	gomockCtl = gomock.NewController(GinkgoT())
 
-	c, err := client.New(testKubeconfig, client.Options{})
+	client, err := client.New(testKubeconfig, client.Options{})
 	Expect(err).ShouldNot(HaveOccurred())
 
-	err = createDefaultNamespace(c)
+	err = createDefaultNamespace(client)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = createNautesConfigs(client)
 	Expect(err).NotTo(HaveOccurred())
 }
 
-func createDefaultNamespace(kubeconfig *rest.Config) error {
+func createDefaultNamespace(c client.Client) error {
 	var defaultNamespace = "nautes"
 
-	cl, err := client.New(kubeconfig, client.Options{})
-	Expect(err).ShouldNot(HaveOccurred())
-
 	ns := corev1.Namespace{}
-	err = cl.Get(context.Background(), client.ObjectKey{Name: defaultNamespace}, &ns)
+	err := c.Get(context.Background(), client.ObjectKey{Name: defaultNamespace}, &ns)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			ns.Name = defaultNamespace
-			err = cl.Create(context.Background(), &ns)
+			err = c.Create(context.Background(), &ns)
 			if err != nil {
 				return err
 			}
@@ -192,17 +192,25 @@ func createDefaultNamespace(kubeconfig *rest.Config) error {
 	return nil
 }
 
-func createNautesConfigs(kubeconfig *rest.Config) {
-	nautesConfig := nautesconfigs.NautesConfig{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "nautes-config",
-			Namespace: "nautes",
-		},
-		Spec: nautesconfigs.NautesConfigSpec{
-			ClusterName: "nautes-cluster",
-		},
+func createNautesConfigs(c client.Client) error {
+	namespace := "nautes"
+	name := "nautes-configs"
+	err := c.Get(context.Background(), client.ObjectKey{Name: name, Namespace: namespace}, &corev1.ConfigMap{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			cm := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name,
+					Namespace: namespace,
+				},
+			}
+			if err := c.Create(context.Background(), cm); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
 	}
 
-	err := k8sutil.CreateOrUpdateNautesConfig(nautesConfig, testKubeconfig)
-	Expect(err).NotTo(HaveOccurred())
+	return nil
 }
