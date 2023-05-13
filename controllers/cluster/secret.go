@@ -22,7 +22,6 @@ import (
 	secret "github.com/nautes-labs/argo-operator/pkg/secret"
 	resourcev1alpha1 "github.com/nautes-labs/pkg/api/v1alpha1"
 	nautesconfigs "github.com/nautes-labs/pkg/pkg/nautesconfigs"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kops/pkg/kubeconfig"
 )
 
@@ -58,6 +57,7 @@ func (r *ClusterReconciler) getSecret(ctx context.Context, clusterName, namespac
 		CABundle:     configs.Secret.Vault.CABundle,
 		MountPath:    configs.Secret.Vault.MountPath,
 		OperatorName: configs.Secret.OperatorName,
+		Namespace:    configs.Nautes.Namespace,
 	}
 
 	if err := r.Secret.InitVault(vaultConfig); err != nil {
@@ -66,11 +66,6 @@ func (r *ClusterReconciler) getSecret(ctx context.Context, clusterName, namespac
 
 	secret, err := r.Secret.GetSecret(secretOptions)
 	if err != nil {
-		condition = metav1.Condition{Type: ClusterConditionType, Message: err.Error(), Reason: RegularUpdate, Status: metav1.ConditionFalse}
-		if err := r.setConditionAndUpdateStatus(ctx, condition); err != nil {
-			return nil, err
-		}
-
 		return nil, fmt.Errorf("failed to get secret, err: %w", err)
 	}
 

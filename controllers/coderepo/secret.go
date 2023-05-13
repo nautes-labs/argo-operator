@@ -51,6 +51,7 @@ func (r *CodeRepoReconciler) getSecret(ctx context.Context, codeRepo *resourcev1
 		CABundle:     configs.Secret.Vault.CABundle,
 		MountPath:    configs.Secret.Vault.MountPath,
 		OperatorName: configs.Secret.OperatorName,
+		Namespace:    configs.Nautes.Namespace,
 	}
 
 	if err := r.Secret.InitVault(vaultConfig); err != nil {

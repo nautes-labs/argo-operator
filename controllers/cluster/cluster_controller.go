@@ -123,9 +123,8 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	secret, err := r.getSecret(ctx, req.Name, req.Namespace, nautesConfigs)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to get secret, err: %v", err)
 		r.Log.V(1).Error(err, "failed to get secret", ResourceName, cluster.Name)
-		condition = metav1.Condition{Type: ClusterConditionType, Message: errMsg.Error(), Reason: RegularUpdate, Status: metav1.ConditionFalse}
+		condition = metav1.Condition{Type: ClusterConditionType, Message: err.Error(), Reason: RegularUpdate, Status: metav1.ConditionFalse}
 		if err := r.setConditionAndUpdateStatus(ctx, condition); err != nil {
 			return ctrl.Result{}, err
 		}
