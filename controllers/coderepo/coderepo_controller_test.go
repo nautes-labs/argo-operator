@@ -92,8 +92,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -166,8 +165,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -235,8 +233,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -323,8 +320,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -366,8 +362,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   true,
 			DeploymentRuntime: false,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"TagPushEvents"},
 			},
 		}
 
@@ -440,8 +435,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -482,8 +476,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   true,
 			DeploymentRuntime: false,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"TagPushEvents"},
 			},
 		}
 
@@ -554,8 +547,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -594,8 +586,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -668,8 +659,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -711,8 +701,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -785,8 +774,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -861,8 +849,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
