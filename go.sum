@@ -995,6 +995,8 @@ github.com/natefinch/lumberjack v0.0.0-20230119042236-215739b3bcdc h1:hNf3PQJIbt
 github.com/natefinch/lumberjack v0.0.0-20230119042236-215739b3bcdc/go.mod h1:IGq9BXcNgiy9zAl4g4nzA04fzbMjmQpOAfHxkVTKE9o=
 github.com/nautes-labs/pkg v0.2.1 h1:IcgcqU/j5P8sx3dl/XPCzxTFx9dqTzsV57O0ZUuSls8=
 github.com/nautes-labs/pkg v0.2.1/go.mod h1:CiOgAU62kDXQ8PGf12Hd82FjASPebjIWwJFlzbH/q/s=
+github.com/nautes-labs/pkg v0.2.2-0.20230513081044-2980b2b520a1 h1:iCrh53D3sUsPf+yTgqjKbwB8rNyqjopStKQs0zCKee8=
+github.com/nautes-labs/pkg v0.2.2-0.20230513081044-2980b2b520a1/go.mod h1:qT3YxKHvrAzeELExmkryPf3HUe9W0hnKLjTJTWTY14U=
 github.com/ncw/swift v1.0.47/go.mod h1:23YIA4yWVnGwv2dQlN4bB7egfYX6YLn0Yo/S6zZO/ZM=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=

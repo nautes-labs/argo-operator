@@ -18,7 +18,7 @@ require (
 
 require (
 	github.com/golang/mock v1.6.0
-	github.com/nautes-labs/pkg v0.2.1
+	github.com/nautes-labs/pkg v0.2.2-0.20230513081044-2980b2b520a1
 	k8s.io/kops v1.22.6
 	sigs.k8s.io/yaml v1.3.0
 )
