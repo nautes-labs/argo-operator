@@ -84,7 +84,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	secret, err := secret.NewVaultClient()
+	cluserSecret, err := secret.NewVaultClient()
 	if err != nil {
 		setupLog.Error(err, "failed to init vault client")
 		os.Exit(1)
@@ -94,10 +94,16 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Argocd: argocd.NewArgocd(argocdServer),
-		Secret: secret,
+		Secret: cluserSecret,
 		Log:    ctrl.Log.WithName("codeRepo controller log"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CodeRepo")
+		os.Exit(1)
+	}
+
+	codeRepoSecret, err := secret.NewVaultClient()
+	if err != nil {
+		setupLog.Error(err, "failed to init vault client")
 		os.Exit(1)
 	}
 
@@ -105,7 +111,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Argocd: argocd.NewArgocd(argocdServer),
-		Secret: secret,
+		Secret: codeRepoSecret,
 		Log:    ctrl.Log.WithName("cluster controller log"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Cluster")
