@@ -12,15 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package secret
+package coderepo
 
-type SecretData struct {
-	ID   int
-	Data string
-}
+import (
+	nautesconfigs "github.com/nautes-labs/pkg/pkg/nautesconfigs"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
 
-type SecretOptions struct {
-	SecretPath   string
-	SecretEngine string
-	SecretKey    string
+func GetNautesConfigs(c client.Client) (nautesConfigs *nautesconfigs.Config, err error) {
+	config := nautesconfigs.NautesConfigs{}
+	nautesConfigs, err = config.GetConfigByClient(c)
+	if err != nil {
+		return
+	}
+	return
 }

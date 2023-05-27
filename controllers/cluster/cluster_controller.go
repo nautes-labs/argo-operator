@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	common "github.com/nautes-labs/argo-operator/controllers/common"
 	argocd "github.com/nautes-labs/argo-operator/pkg/argocd"
 	secret "github.com/nautes-labs/argo-operator/pkg/secret"
 	utilString "github.com/nautes-labs/argo-operator/util/strings"
@@ -27,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
-	nautesconfigs "github.com/nautes-labs/pkg/pkg/nautesconfigs"
 
 	crdv1alpha1 "github.com/nautes-labs/pkg/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -52,7 +52,7 @@ type ClusterReconciler struct {
 	Scheme *runtime.Scheme
 	Argocd *argocd.ArgocdClient
 	Secret secret.SecretOperator
-	Config *nautesconfigs.Config
+	// Config *nautesconfigs.Config
 }
 
 //+kubebuilder:rbac:groups=nautes.resource.nautes.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
@@ -116,11 +116,15 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	secret, err := r.getSecret(ctx, req.Name, req.Namespace)
+	nautesConfigs, err := common.GetNautesConfigs(r.Client)
 	if err != nil {
-		errMsg := fmt.Errorf("failed to get secret, err: %v", err)
+		return ctrl.Result{}, err
+	}
+
+	secret, err := r.getSecret(ctx, req.Name, req.Namespace, nautesConfigs)
+	if err != nil {
 		r.Log.V(1).Error(err, "failed to get secret", ResourceName, cluster.Name)
-		condition = metav1.Condition{Type: ClusterConditionType, Message: errMsg.Error(), Reason: RegularUpdate, Status: metav1.ConditionFalse}
+		condition = metav1.Condition{Type: ClusterConditionType, Message: err.Error(), Reason: RegularUpdate, Status: metav1.ConditionFalse}
 		if err := r.setConditionAndUpdateStatus(ctx, condition); err != nil {
 			return ctrl.Result{}, err
 		}

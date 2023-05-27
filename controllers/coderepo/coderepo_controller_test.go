@@ -78,6 +78,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		}
 
 		sc := secret.NewMockSecretOperator(gomockCtl)
+		sc.EXPECT().InitVault(gomock.Any()).Return(nil)
 		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
 		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
@@ -91,8 +92,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -149,14 +149,15 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			ArgocdCodeRepo: argocdCodeRepo,
 		}
 
-		vaultClient := secret.NewMockSecretOperator(gomockCtl)
-		vaultClient.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
-		vaultClient.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
+		sc := secret.NewMockSecretOperator(gomockCtl)
+		sc.EXPECT().InitVault(gomock.Any()).Return(nil)
+		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
 		// Initial fakeCtl controller instance
 		fakeCtl = NewFakeController()
 		k8sClient = fakeCtl.GetClient()
-		fakeCtl.startCodeRepo(argocd, vaultClient, nautesConfig)
+		fakeCtl.startCodeRepo(argocd, sc, nautesConfig)
 
 		// Resource
 		spec := resourcev1alpha1.CodeRepoSpec{
@@ -164,8 +165,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -233,8 +233,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -305,23 +304,23 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			ArgocdCodeRepo: argocdCodeRepo,
 		}
 
-		vaultClient := secret.NewMockSecretOperator(gomockCtl)
-		vaultClient.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
-		firstGetSecret := vaultClient.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil)
-		vaultClient.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 2, Data: secretData}, nil).AnyTimes().After(firstGetSecret)
+		sc := secret.NewMockSecretOperator(gomockCtl)
+		sc.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
+		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		firstGetSecret := sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil)
+		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 2, Data: secretData}, nil).AnyTimes().After(firstGetSecret)
 
 		// Initial fakeCtl controller instance
 		fakeCtl = NewFakeController()
 		k8sClient = fakeCtl.GetClient()
-		fakeCtl.startCodeRepo(argocd, vaultClient, nautesConfig)
+		fakeCtl.startCodeRepo(argocd, sc, nautesConfig)
 
 		spec := resourcev1alpha1.CodeRepoSpec{
 			URL:               CODEREPO_URL,
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -363,8 +362,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   true,
 			DeploymentRuntime: false,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"TagPushEvents"},
 			},
 		}
 
@@ -420,15 +418,16 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			ArgocdCodeRepo: argocdCodeRepo,
 		}
 
-		vaultClient := secret.NewMockSecretOperator(gomockCtl)
-		vaultClient.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
-		firstGetSecret := vaultClient.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil)
-		vaultClient.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 2, Data: secretData}, nil).AnyTimes().After(firstGetSecret)
+		sc := secret.NewMockSecretOperator(gomockCtl)
+		sc.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
+		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		firstGetSecret := sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil)
+		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 2, Data: secretData}, nil).AnyTimes().After(firstGetSecret)
 
 		// Initial fakeCtl controller instance
 		fakeCtl = NewFakeController()
 		k8sClient = fakeCtl.GetClient()
-		fakeCtl.startCodeRepo(argocd, vaultClient, nautesConfig)
+		fakeCtl.startCodeRepo(argocd, sc, nautesConfig)
 
 		// Resource
 		spec := resourcev1alpha1.CodeRepoSpec{
@@ -436,8 +435,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -478,8 +476,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   true,
 			DeploymentRuntime: false,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"TagPushEvents"},
 			},
 		}
 
@@ -535,6 +532,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		}
 
 		sc := secret.NewMockSecretOperator(gomockCtl)
+		sc.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
 		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
 		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
@@ -549,8 +547,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -589,8 +586,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -648,6 +644,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		}
 
 		sc := secret.NewMockSecretOperator(gomockCtl)
+		sc.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
 		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
 		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
@@ -662,8 +659,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -705,8 +701,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -764,6 +759,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		}
 
 		sc := secret.NewMockSecretOperator(gomockCtl)
+		sc.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
 		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
 		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
@@ -778,8 +774,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -839,6 +834,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		}
 
 		sc := secret.NewMockSecretOperator(gomockCtl)
+		sc.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
 		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
 		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{}, errGetSecret).AnyTimes()
 
@@ -853,8 +849,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
-				Events:    []string{"PushEvents", "TagPushEvents"},
-				Isolation: "exclusive",
+				Events: []string{"PushEvents", "TagPushEvents"},
 			},
 		}
 
@@ -914,6 +909,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		}
 
 		sc := secret.NewMockSecretOperator(gomockCtl)
+		sc.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
 		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
 		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 

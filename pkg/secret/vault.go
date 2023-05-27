@@ -23,7 +23,6 @@ import (
 
 	vault "github.com/hashicorp/vault/api"
 	auth "github.com/hashicorp/vault/api/auth/kubernetes"
-	nautesconfigs "github.com/nautes-labs/pkg/pkg/nautesconfigs"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,54 +37,59 @@ const (
 	AuthRoleKey           = "Argo"
 )
 
+type VaultConfig struct {
+	Addr         string
+	CABundle     string
+	MountPath    string
+	Namespace    string
+	OperatorName map[string]string
+}
+
 type VaultClient struct {
-	client *vault.Client
-	config *nautesconfigs.Config
+	client      *vault.Client
+	VaultConfig *VaultConfig
 }
 
-func NewVaultClient(config *nautesconfigs.Config) (SecretOperator, error) {
-	return &VaultClient{
-		config: config,
-	}, nil
+func NewVaultClient() (SecretOperator, error) {
+	return &VaultClient{}, nil
 }
 
-func (v *VaultClient) initVault() (*vault.Client, error) {
-	config := v.config
-
-	httpClient, err := NewHttpClient(config.Secret.Vault.CABundle)
+func (v *VaultClient) InitVault(config *VaultConfig) error {
+	httpClient, err := NewHttpClient(config.CABundle)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	token, err := v.GetToken(config.Nautes.Namespace)
+	token, err := v.GetToken(config.Namespace)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	kubernetesAuth, err := NewKubernetesAuth(config.Secret.Vault.MountPath, token, config.Secret.OperatorName)
+	kubernetesAuth, err := NewKubernetesAuth(config.MountPath, token, config.OperatorName)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	vaultConfig := vault.DefaultConfig()
-	vaultConfig.Address = config.Secret.Vault.Addr
+	vaultConfig.Address = config.Addr
 	vaultConfig.HttpClient = httpClient
 
 	client, err := vault.NewClient(vaultConfig)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	v.client = client
 
 	authInfo, err := client.Auth().Login(context.Background(), kubernetesAuth)
 	if err != nil {
-		return nil, fmt.Errorf("unable to log in with Kubernetes auth: %w", err)
+		return fmt.Errorf("unable to log in with Kubernetes auth: %w", err)
 	}
 
 	if authInfo == nil {
-		return nil, fmt.Errorf("no auth info was returned after login")
+		return fmt.Errorf("no auth info was returned after login")
 	}
 
-	return client, nil
+	return nil
 }
 
 func (s *VaultClient) Logout(client *vault.Client) error {
@@ -97,19 +101,14 @@ func (s *VaultClient) Logout(client *vault.Client) error {
 }
 
 func (v *VaultClient) GetSecret(secretOptions SecretOptions) (*SecretData, error) {
-	client, err := v.initVault()
-	if err != nil {
-		return nil, err
-	}
+	defer v.Logout(v.client)
 
-	defer v.Logout(client)
-
-	secret, err := client.KVv2(secretOptions.SecretEngine).Get(context.Background(), secretOptions.SecretPath)
+	secret, err := v.client.KVv2(secretOptions.SecretEngine).Get(context.Background(), secretOptions.SecretPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read secret: %w", err)
 	}
 
-	metadata, err := client.KVv2(secretOptions.SecretEngine).GetVersionsAsList(context.Background(), secretOptions.SecretPath)
+	metadata, err := v.client.KVv2(secretOptions.SecretEngine).GetVersionsAsList(context.Background(), secretOptions.SecretPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read versions list: %w", err)
 	}

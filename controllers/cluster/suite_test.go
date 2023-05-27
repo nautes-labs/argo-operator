@@ -35,6 +35,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -107,7 +108,6 @@ func (f *fakeController) startCluster(argocd *argocd.ArgocdClient, secret secret
 			Client: f.k8sManager.GetClient(),
 			Argocd: argocd,
 			Secret: secret,
-			Config: config,
 			Log:    ctrl.Log.WithName("cluster controller test log"),
 		}).SetupWithManager(f.k8sManager)
 
@@ -151,7 +151,13 @@ var _ = BeforeSuite(func() {
 	//+kubebuilder:scaffold:scheme
 	gomockCtl = gomock.NewController(GinkgoT())
 
-	err = createDefaultNamespace(testKubeconfig)
+	client, err := client.New(testKubeconfig, client.Options{})
+	Expect(err).ShouldNot(HaveOccurred())
+
+	err = createDefaultNamespace(client)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = createNautesConfigs(client)
 	Expect(err).NotTo(HaveOccurred())
 })
 
@@ -160,19 +166,39 @@ var _ = AfterSuite(func() {
 	defer testEnv.Stop()
 })
 
-func createDefaultNamespace(kubeconfig *rest.Config) error {
+func createDefaultNamespace(c client.Client) error {
 	var defaultNamespace = "nautes"
 
-	cl, err := client.New(kubeconfig, client.Options{})
-	Expect(err).ShouldNot(HaveOccurred())
-
 	ns := corev1.Namespace{}
-	err = cl.Get(context.Background(), client.ObjectKey{Name: defaultNamespace}, &ns)
+	err := c.Get(context.Background(), client.ObjectKey{Name: defaultNamespace}, &ns)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			ns.Name = defaultNamespace
-			err = cl.Create(context.Background(), &ns)
+			err = c.Create(context.Background(), &ns)
 			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func createNautesConfigs(c client.Client) error {
+	namespace := "nautes"
+	name := "nautes-configs"
+	err := c.Get(context.Background(), client.ObjectKey{Name: name, Namespace: namespace}, &corev1.ConfigMap{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			cm := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name,
+					Namespace: namespace,
+				},
+			}
+			if err := c.Create(context.Background(), cm); err != nil {
 				return err
 			}
 		} else {
