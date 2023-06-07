@@ -25,6 +25,8 @@ func (r *CodeRepoReconciler) syncCodeRepo2Argocd(codeRepo *resourcev1alpha1.Code
 	params := NewCodeRepoParams(url, codeRepo.Name, secret)
 
 	if preCodeRepoURL, ok := isCodeRepoChange(codeRepo, url); ok {
+		r.Log.V(1).Info("the codeRepo %s url is change", codeRepo.Name)
+
 		err := r.deleteCodeRepo(preCodeRepoURL)
 		if err != nil {
 			return false, err
@@ -39,6 +41,8 @@ func (r *CodeRepoReconciler) syncCodeRepo2Argocd(codeRepo *resourcev1alpha1.Code
 	}
 
 	if ok := isSecretChange(codeRepo, secret.ID); ok {
+		r.Log.V(1).Info("the codeRepo %s secret version is change", codeRepo.Name)
+
 		params.skipRepositoryValidCheck = true
 		sync, err := r.saveCodeRepo(params)
 		if err != nil {

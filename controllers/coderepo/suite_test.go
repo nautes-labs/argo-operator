@@ -121,7 +121,7 @@ func (f *fakeController) startCodeRepo(argocd *argocd.ArgocdClient, secret secre
 
 func (f *fakeController) close() {
 	f.cancel()
-	time.Sleep(3 * time.Second)
+	time.Sleep(5 * time.Second)
 }
 
 func (f *fakeController) GetClient() client.Client {

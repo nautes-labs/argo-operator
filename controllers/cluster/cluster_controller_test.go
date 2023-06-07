@@ -74,7 +74,7 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil)
+		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
 		secret.EXPECT().GetToken(gomock.Any()).Return("tokeeeen", nil).AnyTimes()
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
