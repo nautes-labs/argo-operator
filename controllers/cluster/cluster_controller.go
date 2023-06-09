@@ -29,7 +29,6 @@ import (
 
 	"github.com/go-logr/logr"
 
-	crdv1alpha1 "github.com/nautes-labs/pkg/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,7 +54,7 @@ type ClusterReconciler struct {
 	// Config *nautesconfigs.Config
 }
 
-//+kubebuilder:rbac:groups=nautes.resource.nautes.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=nautes.resource.nautes.io,resources=clusters;deploymentruntimes;environments;projectpipelineruntimes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=nautes.resource.nautes.io,resources=clusters/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=nautes.resource.nautes.io,resources=clusters/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
@@ -74,7 +73,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	r.Log.V(1).Info("Start Reconcile", "cluster Name", cluster.Name)
 
 	if cluster.ObjectMeta.DeletionTimestamp.IsZero() {
-		if err := crdv1alpha1.ValidateCluster(cluster, nil, false); err != nil {
+		if err := cluster.ValidateCluster(ctx, cluster, r.Client, false); err != nil {
 			r.Log.V(1).Error(err, "resource verification failed", ResourceName, cluster.Name)
 			condition = metav1.Condition{Type: ClusterConditionType, Message: err.Error(), Reason: RegularUpdate, Status: metav1.ConditionFalse}
 			if err := r.setConditionAndUpdateStatus(ctx, condition); err != nil {
