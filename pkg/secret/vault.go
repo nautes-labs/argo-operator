@@ -23,10 +23,6 @@ import (
 
 	vault "github.com/hashicorp/vault/api"
 	auth "github.com/hashicorp/vault/api/auth/kubernetes"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 const (
@@ -120,57 +116,6 @@ func (v *VaultClient) GetSecret(secretOptions SecretOptions) (*SecretData, error
 		ID:   lastSecretMetadata.Version,
 		Data: secretValue.(string),
 	}, nil
-}
-
-func (v *VaultClient) RenewToken(increment int) error {
-	renewedToken, err := v.client.Auth().Token().RenewSelf(increment)
-	if err != nil {
-		return err
-	}
-
-	v.client.SetToken(renewedToken.Auth.ClientToken)
-
-	return nil
-}
-
-func (v *VaultClient) GetToken(namespace string) (string, error) {
-	sa := &corev1.ServiceAccount{}
-	saNamespaceName := types.NamespacedName{
-		Namespace: namespace,
-		Name:      DefaultServiceAccount,
-	}
-
-	client, err := NewKubernetesClient()
-	if err != nil {
-		return "", err
-	}
-
-	err = client.Get(context.Background(), saNamespaceName, sa)
-	if err != nil {
-		return "", err
-	}
-
-	secretName := sa.Secrets[0].Name
-	secret := &corev1.Secret{}
-	secretNamespaceName := types.NamespacedName{
-		Namespace: namespace,
-		Name:      secretName,
-	}
-
-	err = client.Get(context.Background(), secretNamespaceName, secret)
-	if err != nil {
-		return "", err
-	}
-	return string(secret.Data["token"]), nil
-}
-
-func NewKubernetesClient() (client.Client, error) {
-	client, err := client.New(config.GetConfigOrDie(), client.Options{})
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
 }
 
 func NewHttpClient(ca string) (*http.Client, error) {
