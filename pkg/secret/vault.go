@@ -60,12 +60,7 @@ func (v *VaultClient) InitVault(config *VaultConfig) error {
 		return err
 	}
 
-	token, err := v.GetToken(config.Namespace)
-	if err != nil {
-		return err
-	}
-
-	kubernetesAuth, err := NewKubernetesAuth(config.MountPath, token, config.OperatorName)
+	kubernetesAuth, err := NewKubernetesAuth(config.MountPath, config.OperatorName)
 	if err != nil {
 		return err
 	}
@@ -194,7 +189,7 @@ func NewHttpClient(ca string) (*http.Client, error) {
 	}, nil
 }
 
-func NewKubernetesAuth(mountPath, token string, roles map[string]string) (*auth.KubernetesAuth, error) {
+func NewKubernetesAuth(mountPath string, roles map[string]string) (*auth.KubernetesAuth, error) {
 	if mountPath == "" {
 		return nil, fmt.Errorf("failed to get vault mount path")
 	}
@@ -206,7 +201,6 @@ func NewKubernetesAuth(mountPath, token string, roles map[string]string) (*auth.
 
 	k8sAuth, err := auth.NewKubernetesAuth(
 		role,
-		auth.WithServiceAccountToken(token),
 		auth.WithMountPath(mountPath),
 	)
 
