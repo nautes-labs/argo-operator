@@ -61,7 +61,7 @@ func main() {
 	flag.StringVar(&argocdServer, "argocd-server", "https://argocd-server.argocd.svc", "The address is argocd server.")
 	flag.StringVar(&namespace, "namespace", "nautes", "listen resource namespace.")
 	flag.StringVar(&globalConfigName, "global-config-name", "nautes-configs", "The resources name of global config.")
-	flag.StringVar(&globalConfigNamespace, "global-config-namespace", "nautes", "The namespace of global config in.")
+	flag.StringVar(&globalConfigNamespace, "global-config-namespace", "dr-qa", "The namespace of global config in.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
