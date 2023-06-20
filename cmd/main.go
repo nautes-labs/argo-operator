@@ -52,16 +52,14 @@ func main() {
 	var enableLeaderElection bool
 	var probeAddr string
 	var argocdServer string
-	var namespace string
 	var globalConfigNamespace string
 	var globalConfigName string
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.StringVar(&argocdServer, "argocd-server", "https://argocd-server.argocd.svc", "The address is argocd server.")
-	flag.StringVar(&namespace, "namespace", "nautes", "listen resource namespace.")
 	flag.StringVar(&globalConfigName, "global-config-name", "nautes-configs", "The resources name of global config.")
-	flag.StringVar(&globalConfigNamespace, "global-config-namespace", "dr-qa", "The namespace of global config in.")
+	flag.StringVar(&globalConfigNamespace, "global-config-namespace", "nautes", "The namespace of global config in.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -70,6 +68,8 @@ func main() {
 	logger := zaplog.New()
 	ctrl.SetLogger(logger)
 
+	setupLog.Info("global config", "namespace", globalConfigNamespace, "file name", globalConfigName)
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
@@ -77,7 +77,7 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "457c014f.nautes.io",
-		Namespace:              namespace,
+		Namespace:              globalConfigNamespace,
 		ClientDisableCacheFor: []client.Object{
 			&resourcev1alpha1.Cluster{},
 		},

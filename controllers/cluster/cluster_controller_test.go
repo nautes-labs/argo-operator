@@ -262,8 +262,6 @@ var _ = Describe("Cluster controller test cases", func() {
 			Spec: spec,
 		}
 
-		// time.Sleep(time.Second * 5)
-
 		// Create
 		By("Expected resource created successfully")
 		err := k8sClient.Create(context.Background(), toCreate)
@@ -352,6 +350,8 @@ var _ = Describe("Cluster controller test cases", func() {
 		By("Expecting resource creation successfully")
 		err := k8sClient.Create(context.Background(), toCreate)
 		Expect(err).ShouldNot(HaveOccurred())
+
+		time.Sleep(time.Second * 8)
 
 		By("Expecting cluster added argocd")
 		Eventually(func() bool {
