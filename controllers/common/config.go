@@ -19,8 +19,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetNautesConfigs(c client.Client) (nautesConfigs *nautesconfigs.Config, err error) {
-	config := nautesconfigs.NautesConfigs{}
+func GetNautesConfigs(c client.Client, namspace, name string) (nautesConfigs *nautesconfigs.Config, err error) {
+	config := nautesconfigs.NautesConfigs{
+		Namespace: namspace,
+		Name:      name,
+	}
 	nautesConfigs, err = config.GetConfigByClient(c)
 	if err != nil {
 		return

@@ -39,12 +39,13 @@ const (
 // CodeRepoReconciler reconciles a CodeRepo object
 type CodeRepoReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	Argocd *argocd.ArgocdClient
-	Secret secret.SecretOperator
-	// Config *nautesconfigs.Config
-	Log logr.Logger
-	URL string
+	Scheme                *runtime.Scheme
+	Argocd                *argocd.ArgocdClient
+	Secret                secret.SecretOperator
+	Log                   logr.Logger
+	URL                   string
+	GlobalConfigNamespace string
+	GlobalConfigName      string
 }
 
 //+kubebuilder:rbac:groups=nautes.resource.nautes.io,resources=coderepoes;products;coderepoproviders,verbs=get;list;watch;create;update;patch;delete
@@ -115,7 +116,7 @@ func (r *CodeRepoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	r.Log.V(1).Info("Successfully get codeRepo url", ResourceName, codeRepo.Name, "url", url)
 
-	nautesConfigs, err := common.GetNautesConfigs(r.Client)
+	nautesConfigs, err := common.GetNautesConfigs(r.Client, r.GlobalConfigNamespace, r.GlobalConfigName)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

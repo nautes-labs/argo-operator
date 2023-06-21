@@ -23,18 +23,14 @@ import (
 
 	vault "github.com/hashicorp/vault/api"
 	auth "github.com/hashicorp/vault/api/auth/kubernetes"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 const (
-	DefaultNamespace      = "nautes"
-	DefaultServiceAccount = "argo-controller-manager"
-	SecretsEngine         = "git"
-	SecretsKey            = "deploykey"
-	AuthRoleKey           = "Argo"
+	SecretsEngine = "git"
+	SecretsKey    = "deploykey"
+	AuthRoleKey   = "Argo"
 )
 
 type VaultConfig struct {
@@ -54,18 +50,22 @@ func NewVaultClient() (SecretOperator, error) {
 	return &VaultClient{}, nil
 }
 
+func NewKubernetesClient() (client.Client, error) {
+	client, err := client.New(config.GetConfigOrDie(), client.Options{})
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
 func (v *VaultClient) InitVault(config *VaultConfig) error {
 	httpClient, err := NewHttpClient(config.CABundle)
 	if err != nil {
 		return err
 	}
 
-	token, err := v.GetToken(config.Namespace)
-	if err != nil {
-		return err
-	}
-
-	kubernetesAuth, err := NewKubernetesAuth(config.MountPath, token, config.OperatorName)
+	kubernetesAuth, err := NewKubernetesAuth(config.MountPath, config.OperatorName)
 	if err != nil {
 		return err
 	}
@@ -127,57 +127,6 @@ func (v *VaultClient) GetSecret(secretOptions SecretOptions) (*SecretData, error
 	}, nil
 }
 
-func (v *VaultClient) RenewToken(increment int) error {
-	renewedToken, err := v.client.Auth().Token().RenewSelf(increment)
-	if err != nil {
-		return err
-	}
-
-	v.client.SetToken(renewedToken.Auth.ClientToken)
-
-	return nil
-}
-
-func (v *VaultClient) GetToken(namespace string) (string, error) {
-	sa := &corev1.ServiceAccount{}
-	saNamespaceName := types.NamespacedName{
-		Namespace: namespace,
-		Name:      DefaultServiceAccount,
-	}
-
-	client, err := NewKubernetesClient()
-	if err != nil {
-		return "", err
-	}
-
-	err = client.Get(context.Background(), saNamespaceName, sa)
-	if err != nil {
-		return "", err
-	}
-
-	secretName := sa.Secrets[0].Name
-	secret := &corev1.Secret{}
-	secretNamespaceName := types.NamespacedName{
-		Namespace: namespace,
-		Name:      secretName,
-	}
-
-	err = client.Get(context.Background(), secretNamespaceName, secret)
-	if err != nil {
-		return "", err
-	}
-	return string(secret.Data["token"]), nil
-}
-
-func NewKubernetesClient() (client.Client, error) {
-	client, err := client.New(config.GetConfigOrDie(), client.Options{})
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
-}
-
 func NewHttpClient(ca string) (*http.Client, error) {
 	if ca == "" {
 		return nil, fmt.Errorf("failed to get vault cert")
@@ -194,7 +143,7 @@ func NewHttpClient(ca string) (*http.Client, error) {
 	}, nil
 }
 
-func NewKubernetesAuth(mountPath, token string, roles map[string]string) (*auth.KubernetesAuth, error) {
+func NewKubernetesAuth(mountPath string, roles map[string]string) (*auth.KubernetesAuth, error) {
 	if mountPath == "" {
 		return nil, fmt.Errorf("failed to get vault mount path")
 	}
@@ -206,7 +155,6 @@ func NewKubernetesAuth(mountPath, token string, roles map[string]string) (*auth.
 
 	k8sAuth, err := auth.NewKubernetesAuth(
 		role,
-		auth.WithServiceAccountToken(token),
 		auth.WithMountPath(mountPath),
 	)
 

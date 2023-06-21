@@ -47,11 +47,12 @@ var (
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
-	Argocd *argocd.ArgocdClient
-	Secret secret.SecretOperator
-	// Config *nautesconfigs.Config
+	Log                   logr.Logger
+	Scheme                *runtime.Scheme
+	Argocd                *argocd.ArgocdClient
+	Secret                secret.SecretOperator
+	GlobalConfigNamespace string
+	GlobalConfigName      string
 }
 
 //+kubebuilder:rbac:groups=nautes.resource.nautes.io,resources=clusters;deploymentruntimes;environments;projectpipelineruntimes,verbs=get;list;watch;create;update;patch;delete
@@ -115,7 +116,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	nautesConfigs, err := common.GetNautesConfigs(r.Client)
+	nautesConfigs, err := common.GetNautesConfigs(r.Client, r.GlobalConfigNamespace, r.GlobalConfigName)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
