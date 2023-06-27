@@ -48,11 +48,11 @@ type CodeRepoReconciler struct {
 	GlobalConfigName      string
 }
 
-//+kubebuilder:rbac:namespace=nautes,groups=nautes.resource.nautes.io,resources=coderepoes;products;coderepoproviders,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:namespace=nautes,groups=nautes.resource.nautes.io,resources=coderepoes/status,verbs=get;update;patch
-//+kubebuilder:rbac:namespace=nautes,groups=nautes.resource.nautes.io,resources=coderepoes/finalizers,verbs=update
-//+kubebuilder:rbac:namespace=nautes,groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:namespace=nautes,groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:namespace=system,groups=nautes.resource.nautes.io,resources=coderepoes;products;coderepoproviders,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:namespace=system,groups=nautes.resource.nautes.io,resources=coderepoes/status,verbs=get;update;patch
+//+kubebuilder:rbac:namespace=system,groups=nautes.resource.nautes.io,resources=coderepoes/finalizers,verbs=update
+//+kubebuilder:rbac:namespace=system,groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:namespace=system,groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 
 func (r *CodeRepoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	var requeueAfter = 60 * time.Second
