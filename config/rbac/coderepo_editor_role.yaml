@@ -1,9 +1,8 @@
 # permissions for end users to edit coderepoes.
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   name: coderepo-editor-role
-  namespace: system
 rules:
 - apiGroups:
   - nautes.resource.nautes.io

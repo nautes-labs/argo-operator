@@ -4,7 +4,7 @@ kind: Role
 metadata:
   creationTimestamp: null
   name: manager-role
-  namespace: system
+  namespace: nautes
 rules:
 - apiGroups:
   - ""

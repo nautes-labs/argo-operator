@@ -55,12 +55,12 @@ type ClusterReconciler struct {
 	GlobalConfigName      string
 }
 
-//+kubebuilder:rbac:namespace=system,groups=nautes.resource.nautes.io,resources=clusters;deploymentruntimes;environments;projectpipelineruntimes,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:namespace=system,groups=nautes.resource.nautes.io,resources=clusters/status,verbs=get;update;patch
-//+kubebuilder:rbac:namespace=system,groups=nautes.resource.nautes.io,resources=clusters/finalizers,verbs=update
-//+kubebuilder:rbac:namespace=system,groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:namespace=system,groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:namespace=system,groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:namespace=nautes,groups=nautes.resource.nautes.io,resources=clusters;deploymentruntimes;environments;projectpipelineruntimes,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:namespace=nautes,groups=nautes.resource.nautes.io,resources=clusters/status,verbs=get;update;patch
+//+kubebuilder:rbac:namespace=nautes,groups=nautes.resource.nautes.io,resources=clusters/finalizers,verbs=update
+//+kubebuilder:rbac:namespace=nautes,groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:namespace=nautes,groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:namespace=nautes,groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 
 func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	var requeueAfter = 60 * time.Second
