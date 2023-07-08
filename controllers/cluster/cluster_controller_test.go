@@ -37,7 +37,7 @@ var (
 )
 
 var _ = Describe("Cluster controller test cases", func() {
-	const timeout = time.Second * 80
+	const timeout = time.Second * 20
 	const interval = time.Second * 8
 	const CLUSTER_ADDRESS = "https://kubernetes.default.svc"
 

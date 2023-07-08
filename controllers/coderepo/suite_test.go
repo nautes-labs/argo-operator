@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/golang/mock/gomock"
 	argocd "github.com/nautes-labs/argo-operator/pkg/argocd"
 	secret "github.com/nautes-labs/argo-operator/pkg/secret"
@@ -36,6 +37,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -101,22 +103,28 @@ func NewFakeController() *fakeController {
 	}
 }
 
-func (f *fakeController) startCodeRepo(argocd *argocd.ArgocdClient, secret secret.SecretOperator, config *nautesconfigs.Config) {
-	if f.k8sManager != nil {
-		(&CodeRepoReconciler{
-			Scheme: f.k8sManager.GetScheme(),
-			Client: f.GetClient(),
-			Argocd: argocd,
-			Secret: secret,
-			Log:    ctrl.Log.WithName("codeRepo controllertest log"),
-		}).SetupWithManager(f.k8sManager)
-
-		go func() {
-			defer GinkgoRecover()
-			err := f.k8sManager.Start(f.ctx)
-			Expect(err).ShouldNot(HaveOccurred())
-		}()
+func NewReconciler(scheme *runtime.Scheme, k8sClient client.Client, argocd *argocd.ArgocdClient, secret secret.SecretOperator, log logr.Logger) *CodeRepoReconciler {
+	return &CodeRepoReconciler{
+		Scheme: scheme,
+		Client: k8sClient,
+		Argocd: argocd,
+		Secret: secret,
+		Log:    log,
 	}
+}
+
+func (f *fakeController) startCodeRepo(argocd *argocd.ArgocdClient, secret secret.SecretOperator, config *nautesconfigs.Config) {
+	scheme := f.k8sManager.GetScheme()
+	k8sClient := f.k8sManager.GetClient()
+	log := ctrl.Log.WithName("codeRepo controller test log")
+	reconciler := NewReconciler(scheme, k8sClient, argocd, secret, log)
+	reconciler.SetupWithManager(f.k8sManager)
+
+	go func() {
+		defer GinkgoRecover()
+		err := f.k8sManager.Start(f.ctx)
+		Expect(err).ShouldNot(HaveOccurred())
+	}()
 }
 
 func (f *fakeController) close() {
