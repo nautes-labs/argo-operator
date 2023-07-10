@@ -22,9 +22,11 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	"github.com/golang/mock/gomock"
 	argocd "github.com/nautes-labs/argo-operator/pkg/argocd"
 	secret "github.com/nautes-labs/argo-operator/pkg/secret"
 	utilPort "github.com/nautes-labs/argo-operator/util/port"
+	resourcev1alpha1 "github.com/nautes-labs/pkg/api/v1alpha1"
 	zaplog "github.com/nautes-labs/pkg/pkg/log/zap"
 
 	nautesconfigs "github.com/nautes-labs/pkg/pkg/nautesconfigs"
@@ -42,11 +44,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	common "github.com/nautes-labs/argo-operator/controllers/common"
 	//+kubebuilder:scaffold:imports
 )
 
 var (
-	testEnv *envtest.Environment
+	testEnv        *envtest.Environment
+	gomockCtl      *gomock.Controller
+	testKubeconfig *rest.Config
 )
 
 func TestAPIs(t *testing.T) {
@@ -59,10 +65,9 @@ type fakeController struct {
 	ctx        context.Context
 	cancel     context.CancelFunc
 	waitClose  chan bool
-	kubeconfig *rest.Config
 }
 
-func NewFakeController(kubeconfig *rest.Config) *fakeController {
+func NewFakeController() *fakeController {
 	ctrl.SetLogger(zaplog.New())
 
 	var port int
@@ -72,7 +77,13 @@ func NewFakeController(kubeconfig *rest.Config) *fakeController {
 		port = 8000
 	}
 
-	k8sManager, err := ctrl.NewManager(kubeconfig, ctrl.Options{Scheme: scheme.Scheme, MetricsBindAddress: fmt.Sprintf(":%d", port)})
+	k8sManager, err := ctrl.NewManager(testKubeconfig, ctrl.Options{
+		Scheme:             scheme.Scheme,
+		MetricsBindAddress: fmt.Sprintf(":%d", port),
+		ClientDisableCacheFor: []client.Object{
+			&resourcev1alpha1.Cluster{},
+		},
+	})
 	Expect(err).ToNot(HaveOccurred())
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -81,7 +92,6 @@ func NewFakeController(kubeconfig *rest.Config) *fakeController {
 		ctx:        ctx,
 		cancel:     cancel,
 		waitClose:  make(chan bool),
-		kubeconfig: kubeconfig,
 	}
 }
 
@@ -95,26 +105,8 @@ func NewReconciler(scheme *runtime.Scheme, k8sClient client.Client, argocd *argo
 	}
 }
 
-func initialEnvTest() (*rest.Config, error) {
-	use := false
-	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:  []string{filepath.Join("..", "..", "config", "crd", "bases")},
-		UseExistingCluster: &use,
-	}
-	kubeconfig, err := testEnv.Start()
-	if err != nil {
-		return nil, err
-	}
-
-	return kubeconfig, nil
-}
-
-func stopEnvTest() error {
-	return testEnv.Stop()
-}
-
 func (f *fakeController) startCluster(argocd *argocd.ArgocdClient, secret secret.SecretOperator, config *nautesconfigs.Config) {
-	client, err := client.New(f.kubeconfig, client.Options{})
+	client, err := client.New(testKubeconfig, client.Options{})
 	Expect(err).ShouldNot(HaveOccurred())
 
 	err = createDefaultNamespace(client)
@@ -145,11 +137,6 @@ func (f *fakeController) close() {
 	f.cancel()
 	message := <-f.waitClose
 	fmt.Println("Have closed Controller", message)
-
-	err := stopEnvTest()
-	if err != nil {
-		os.Exit(1)
-	}
 }
 
 func (f *fakeController) GetClient() client.Client {
@@ -195,4 +182,49 @@ func createNautesConfigs(c client.Client) error {
 	}
 
 	return nil
+}
+
+var _ = BeforeSuite(func() {
+	_ = os.Setenv(common.ReconcileTime, "3")
+	startClusterServer()
+	_ = ctrl.Log.WithName("BeforeSuite log")
+})
+
+var _ = AfterSuite(func() {
+	defer testEnv.Stop()
+})
+
+func startClusterServer() {
+	By("bootstrapping test environment")
+	crdPath := filepath.Join("..", "..", "config", "crd", "bases")
+	_, err := os.Stat(crdPath)
+	if err != nil {
+		os.Exit(1)
+	}
+
+	var use = false
+	testEnv = &envtest.Environment{
+		CRDDirectoryPaths:        []string{crdPath},
+		UseExistingCluster:       &use,
+		AttachControlPlaneOutput: false,
+	}
+	testKubeconfig, err = testEnv.Start()
+	if err != nil {
+		os.Exit(1)
+	}
+
+	err = resourcev1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	//+kubebuilder:scaffold:scheme
+	gomockCtl = gomock.NewController(GinkgoT())
+
+	client, err := client.New(testKubeconfig, client.Options{})
+	Expect(err).ShouldNot(HaveOccurred())
+
+	err = createDefaultNamespace(client)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = createNautesConfigs(client)
+	Expect(err).NotTo(HaveOccurred())
 }

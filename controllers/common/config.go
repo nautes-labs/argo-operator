@@ -15,6 +15,10 @@
 package controller
 
 import (
+	"os"
+	"strconv"
+	"time"
+
 	nautesconfigs "github.com/nautes-labs/pkg/pkg/nautesconfigs"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -29,4 +33,22 @@ func GetNautesConfigs(c client.Client, namspace, name string) (nautesConfigs *na
 		return
 	}
 	return
+}
+
+const ReconcileTime = "ReconcileTime"
+
+func GetReconcileTime() time.Duration {
+	defaultTime := 60 * time.Second
+
+	value := os.Getenv(ReconcileTime)
+	if value != "" {
+		newTime, err := strconv.Atoi(value)
+		if err != nil {
+			return defaultTime
+		}
+
+		return time.Duration(newTime) * time.Second
+	}
+
+	return defaultTime
 }

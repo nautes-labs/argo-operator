@@ -41,10 +41,10 @@ var (
 
 var _ = Describe("CodeRepo controller test cases", func() {
 	const (
-		timeout             = time.Second * 20
-		interval            = time.Second * 5
-		CODEREPO_URL        = "git@158.222.222.235:nautes/test.git"
-		CODEREPO_UPDATE_URL = "ssh://git@gitlab.com:2222/nautes-labs/test.git"
+		timeout           = time.Second * 20
+		interval          = time.Second * 5
+		codeRepoURL       = "git@158.222.222.235:nautes/test.git"
+		codeRepoUpdateURL = "ssh://git@gitlab.com:2222/nautes-labs/test.git"
 	)
 
 	var (
@@ -71,14 +71,14 @@ var _ = Describe("CodeRepo controller test cases", func() {
 	var (
 		codeRepoReponse = &argocd.CodeRepoResponse{
 			Name: "argo-operator-test-vcluster",
-			Repo: CODEREPO_URL,
+			Repo: codeRepoURL,
 			ConnectionState: argocd.ConnectionState{
 				Status: "Successful",
 			},
 		}
 		codeRepoFailReponse = &argocd.CodeRepoResponse{
 			Name: "argo-operator-test-vcluster",
-			Repo: CODEREPO_URL,
+			Repo: codeRepoURL,
 			ConnectionState: argocd.ConnectionState{
 				Status: "Fail",
 			},
@@ -112,7 +112,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		fakeCtl.startCodeRepo(argocd, sc, nautesConfig)
 
 		spec := resourcev1alpha1.CodeRepoSpec{
-			URL:               CODEREPO_URL,
+			URL:               codeRepoURL,
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
@@ -138,7 +138,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		err := k8sClient.Create(context.Background(), toCreate)
 		Expect(err).ShouldNot(HaveOccurred())
 
-		time.Sleep(time.Second * 6)
+		time.Sleep(time.Second * 3)
 
 		Eventually(func() bool {
 			codeRepo := &resourcev1alpha1.CodeRepo{}
@@ -184,7 +184,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 
 		// Resource
 		spec := resourcev1alpha1.CodeRepoSpec{
-			URL:               CODEREPO_URL,
+			URL:               codeRepoURL,
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
@@ -211,7 +211,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		err := k8sClient.Create(context.Background(), toCreate)
 		Expect(err).ShouldNot(HaveOccurred())
 
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 3)
 
 		Eventually(func() bool {
 			codeRepo := &resourcev1alpha1.CodeRepo{}
@@ -279,7 +279,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		err := k8sClient.Create(context.Background(), toCreate)
 		Expect(err).ShouldNot(HaveOccurred())
 
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 3)
 
 		Eventually(func() bool {
 			codeRepo := &resourcev1alpha1.CodeRepo{}
@@ -338,7 +338,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		fakeCtl.startCodeRepo(argocd, sc, nautesConfig)
 
 		spec := resourcev1alpha1.CodeRepoSpec{
-			URL:               CODEREPO_URL,
+			URL:               codeRepoURL,
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
@@ -365,7 +365,8 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		err := k8sClient.Create(context.Background(), toCreate)
 		Expect(err).ShouldNot(HaveOccurred())
 
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 3)
+
 		By("Expecting cluster added argocd")
 		Eventually(func() bool {
 			codeRepo := &resourcev1alpha1.CodeRepo{}
@@ -380,7 +381,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		// Update
 		By("Expected the cluster is to be updated")
 		updateSpec := resourcev1alpha1.CodeRepoSpec{
-			URL:               CODEREPO_URL,
+			URL:               codeRepoURL,
 			PipelineRuntime:   true,
 			DeploymentRuntime: false,
 			Webhook: &resourcev1alpha1.Webhook{
@@ -452,7 +453,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 
 		// Resource
 		spec := resourcev1alpha1.CodeRepoSpec{
-			URL:               CODEREPO_URL,
+			URL:               codeRepoURL,
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
@@ -493,7 +494,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		// Update
 		By("Expected the cluster is to be updated")
 		updateSpec := resourcev1alpha1.CodeRepoSpec{
-			URL:               CODEREPO_URL,
+			URL:               codeRepoURL,
 			PipelineRuntime:   true,
 			DeploymentRuntime: false,
 			Webhook: &resourcev1alpha1.Webhook{
@@ -563,7 +564,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 
 		// Resource
 		spec := resourcev1alpha1.CodeRepoSpec{
-			URL:               CODEREPO_URL,
+			URL:               codeRepoURL,
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
@@ -589,20 +590,20 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		err := k8sClient.Create(context.Background(), toCreate)
 		Expect(err).ShouldNot(HaveOccurred())
 
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 3)
 
 		By("Expecting cluster added argocd")
 		Eventually(func() bool {
 			codeRepo := &resourcev1alpha1.CodeRepo{}
 			k8sClient.Get(context.Background(), key, codeRepo)
-			condition := codeRepo.Status.GetConditions(map[string]bool{CodeRepoConditionType: true})
-			return len(condition) > 0
+			conditions := codeRepo.Status.GetConditions(map[string]bool{CodeRepoConditionType: true})
+			return len(conditions) > 0
 		}, timeout, interval).Should(BeTrue())
 
 		// Update
 		By("Expected the cluster is to be updated")
 		updateSpec := resourcev1alpha1.CodeRepoSpec{
-			URL:               CODEREPO_UPDATE_URL,
+			URL:               codeRepoUpdateURL,
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
@@ -630,9 +631,9 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			err := k8sClient.Get(context.Background(), key, codeRepo)
 			Expect(err).ShouldNot(HaveOccurred())
 
-			condition := codeRepo.Status.GetConditions(map[string]bool{CodeRepoConditionType: true})
+			conditions := codeRepo.Status.GetConditions(map[string]bool{CodeRepoConditionType: true})
 
-			return len(condition) > 0
+			return len(conditions) > 0
 		}, timeout, interval).Should(BeTrue())
 
 		// Delete
@@ -674,7 +675,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 
 		// Resource
 		spec := resourcev1alpha1.CodeRepoSpec{
-			URL:               CODEREPO_URL,
+			URL:               codeRepoURL,
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
@@ -700,7 +701,8 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		By("Expecting resource creation successfully")
 		err := k8sClient.Create(context.Background(), toCreate)
 		Expect(err).ShouldNot(HaveOccurred())
-		time.Sleep(time.Second * 5)
+
+		time.Sleep(time.Second * 3)
 
 		By("Expecting cluster added argocd")
 		Eventually(func() bool {
@@ -716,7 +718,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		// Update
 		By("Expected the coderepo is to be updated")
 		updateSpec := resourcev1alpha1.CodeRepoSpec{
-			URL:               CODEREPO_UPDATE_URL,
+			URL:               codeRepoUpdateURL,
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
@@ -743,10 +745,12 @@ var _ = Describe("CodeRepo controller test cases", func() {
 			codeRepo := &resourcev1alpha1.CodeRepo{}
 			err := k8sClient.Get(context.Background(), key, codeRepo)
 			Expect(err).ShouldNot(HaveOccurred())
+			conditions := codeRepo.Status.GetConditions(map[string]bool{CodeRepoConditionType: true})
+			if len(conditions) > 0 {
+				return conditions[0].Status == "True"
+			}
 
-			condition := codeRepo.Status.GetConditions(map[string]bool{CodeRepoConditionType: true})
-
-			return len(condition) > 0
+			return false
 		}, timeout, interval).Should(BeTrue())
 
 		// Delete
@@ -788,7 +792,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 
 		// Resource
 		spec := resourcev1alpha1.CodeRepoSpec{
-			URL:               CODEREPO_URL,
+			URL:               codeRepoURL,
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
@@ -862,7 +866,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 
 		// Resource
 		spec := resourcev1alpha1.CodeRepoSpec{
-			URL:               CODEREPO_URL,
+			URL:               codeRepoURL,
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
@@ -936,7 +940,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 
 		// Resource
 		spec := resourcev1alpha1.CodeRepoSpec{
-			URL:               CODEREPO_URL,
+			URL:               codeRepoURL,
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
@@ -977,7 +981,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		// Update
 		By("Expected the cluster is to be updated")
 		updateSpec := resourcev1alpha1.CodeRepoSpec{
-			URL:               CODEREPO_URL,
+			URL:               codeRepoURL,
 			PipelineRuntime:   false,
 			DeploymentRuntime: true,
 			Webhook: &resourcev1alpha1.Webhook{
