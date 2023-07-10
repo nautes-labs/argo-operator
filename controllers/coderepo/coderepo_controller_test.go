@@ -103,8 +103,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		}
 
 		sc := secret.NewMockSecretOperator(gomockCtl)
-		sc.EXPECT().InitVault(gomock.Any()).Return(nil)
-		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		sc.EXPECT().Init(gomock.Any()).Return(nil)
 		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
 		// Initial fakeCtl controller instance
@@ -175,8 +174,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		}
 
 		sc := secret.NewMockSecretOperator(gomockCtl)
-		sc.EXPECT().InitVault(gomock.Any()).Return(nil)
-		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		sc.EXPECT().Init(gomock.Any()).Return(nil)
 		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
 		// Initial fakeCtl controller instance
@@ -330,8 +328,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		}
 
 		sc := secret.NewMockSecretOperator(gomockCtl)
-		sc.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		sc.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
 		firstGetSecret := sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil)
 		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 2, Data: secretData}, nil).AnyTimes().After(firstGetSecret)
 
@@ -444,8 +441,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		}
 
 		sc := secret.NewMockSecretOperator(gomockCtl)
-		sc.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		sc.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
 		firstGetSecret := sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil)
 		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 2, Data: secretData}, nil).AnyTimes().After(firstGetSecret)
 
@@ -557,8 +553,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		}
 
 		sc := secret.NewMockSecretOperator(gomockCtl)
-		sc.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		sc.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
 		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
 		// Initial fakeCtl controller instance
@@ -669,8 +664,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		}
 
 		sc := secret.NewMockSecretOperator(gomockCtl)
-		sc.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		sc.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
 		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
 		// Initial fakeCtl controller instance
@@ -784,8 +778,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		}
 
 		sc := secret.NewMockSecretOperator(gomockCtl)
-		sc.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		sc.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
 		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
 		// Initial fakeCtl controller instance
@@ -859,8 +852,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		}
 
 		sc := secret.NewMockSecretOperator(gomockCtl)
-		sc.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		sc.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
 		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{}, errGetSecret).AnyTimes()
 
 		// Initial fakeCtl controller instance
@@ -934,8 +926,7 @@ var _ = Describe("CodeRepo controller test cases", func() {
 		}
 
 		sc := secret.NewMockSecretOperator(gomockCtl)
-		sc.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		sc.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		sc.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
 		sc.EXPECT().GetSecret(gomock.Any()).Return(&secret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
 		// Initial fakeCtl controller instance

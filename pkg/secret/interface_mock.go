@@ -48,31 +48,16 @@ func (mr *MockSecretOperatorMockRecorder) GetSecret(secretOptions interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecret", reflect.TypeOf((*MockSecretOperator)(nil).GetSecret), secretOptions)
 }
 
-// GetToken mocks base method.
-func (m *MockSecretOperator) GetToken(namespace string) (string, error) {
+// Init mocks base method.
+func (m *MockSecretOperator) Init(secretConfig *SecretConfig) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetToken", namespace)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetToken indicates an expected call of GetToken.
-func (mr *MockSecretOperatorMockRecorder) GetToken(namespace interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetToken", reflect.TypeOf((*MockSecretOperator)(nil).GetToken), namespace)
-}
-
-// InitVault mocks base method.
-func (m *MockSecretOperator) InitVault(config *VaultConfig) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InitVault", config)
+	ret := m.ctrl.Call(m, "Init", secretConfig)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// InitVault indicates an expected call of InitVault.
-func (mr *MockSecretOperatorMockRecorder) InitVault(config interface{}) *gomock.Call {
+// Init indicates an expected call of Init.
+func (mr *MockSecretOperatorMockRecorder) Init(secretConfig interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitVault", reflect.TypeOf((*MockSecretOperator)(nil).InitVault), config)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockSecretOperator)(nil).Init), secretConfig)
 }

@@ -59,19 +59,19 @@ func NewKubernetesClient() (client.Client, error) {
 	return client, nil
 }
 
-func (v *VaultClient) InitVault(config *VaultConfig) error {
-	httpClient, err := NewHttpClient(config.CABundle)
+func (v *VaultClient) Init(config *SecretConfig) error {
+	httpClient, err := NewHttpClient(config.SecretRepo.Vault.CABundle)
 	if err != nil {
 		return err
 	}
 
-	kubernetesAuth, err := NewKubernetesAuth(config.MountPath, config.OperatorName)
+	kubernetesAuth, err := NewKubernetesAuth(config.SecretRepo.Vault.MountPath, config.SecretRepo.OperatorName)
 	if err != nil {
 		return err
 	}
 
 	vaultConfig := vault.DefaultConfig()
-	vaultConfig.Address = config.Addr
+	vaultConfig.Address = config.SecretRepo.Vault.Addr
 	vaultConfig.HttpClient = httpClient
 
 	client, err := vault.NewClient(vaultConfig)

@@ -52,15 +52,12 @@ func (r *ClusterReconciler) getSecret(ctx context.Context, clusterName, namespac
 		SecretKey:    secretsKey,
 	}
 
-	vaultConfig := &secret.VaultConfig{
-		Addr:         configs.Secret.Vault.Addr,
-		CABundle:     configs.Secret.Vault.CABundle,
-		MountPath:    configs.Secret.Vault.MountPath,
-		OperatorName: configs.Secret.OperatorName,
-		Namespace:    configs.Nautes.Namespace,
+	secretConfig := &secret.SecretConfig{
+		Namespace:  configs.Nautes.Namespace,
+		SecretRepo: &configs.Secret,
 	}
 
-	if err := r.Secret.InitVault(vaultConfig); err != nil {
+	if err := r.Secret.Init(secretConfig); err != nil {
 		return nil, err
 	}
 

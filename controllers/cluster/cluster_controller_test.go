@@ -108,8 +108,8 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("tokeeeen", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
+
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
 		// Initial fakeCtl controller instance
@@ -194,8 +194,7 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("tokeeeen", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
 		// Initial fakeCtl controller instance
@@ -370,8 +369,7 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
 		firstGetSecret := secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 1, Data: secretData}, nil)
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 2, Data: secretData}, nil).AnyTimes().After(firstGetSecret)
 
@@ -486,8 +484,7 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
 		// Initial fakeCtl controller instance
@@ -596,8 +593,8 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
+
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
 		// Initial fakeCtl controller instance
@@ -708,8 +705,8 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("tokeeeen", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
+
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
 		// Initial fakeCtl controller instance
@@ -791,8 +788,8 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("tokeeeen", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
+
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{}, errGetSecret).AnyTimes()
 
 		// Initial fakeCtl controller instance
@@ -857,8 +854,8 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
+
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
 		// Initial fakeCtl controller instance
@@ -970,8 +967,8 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
+
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
 		// Initial fakeCtl controller instance
