@@ -47,11 +47,11 @@ type CodeRepoReconciler struct {
 	GlobalConfigName      string
 }
 
-//+kubebuilder:rbac:namespace=nautes,groups=nautes.resource.nautes.io,resources=coderepoes;products;coderepoproviders,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:namespace=nautes,groups=nautes.resource.nautes.io,resources=coderepoes/status,verbs=get;update;patch
-//+kubebuilder:rbac:namespace=nautes,groups=nautes.resource.nautes.io,resources=coderepoes/finalizers,verbs=update
-//+kubebuilder:rbac:namespace=nautes,groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:namespace=nautes,groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:groups=nautes.resource.nautes.io,resources=coderepoes;products;coderepoproviders,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:groups=nautes.resource.nautes.io,resources=coderepoes/status,verbs=get;update;patch
+//+kubebuilder:groups=nautes.resource.nautes.io,resources=coderepoes/finalizers,verbs=update
+//+kubebuilder:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 
 func (r *CodeRepoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	var requeueAfter = common.GetReconcileTime()
