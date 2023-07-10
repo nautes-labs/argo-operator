@@ -24,6 +24,7 @@ import (
 const (
 	RegularUpdate        = "RegularUpdate"
 	ClusterConditionType = "ClusterSyncToArgocd"
+	DefaultNamespace     = "nautes"
 )
 
 var (

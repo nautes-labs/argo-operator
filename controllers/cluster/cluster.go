@@ -133,6 +133,8 @@ func (r *ClusterReconciler) updateCluster(ctx context.Context, cluster *resource
 		if err := r.setConditionAndUpdateStatus(ctx, condition); err != nil {
 			return err
 		}
+
+		return err
 	}
 
 	return nil
