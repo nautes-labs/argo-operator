@@ -17,7 +17,6 @@ package cluster
 import (
 	"context"
 	"fmt"
-	"time"
 
 	common "github.com/nautes-labs/argo-operator/controllers/common"
 	argocd "github.com/nautes-labs/argo-operator/pkg/argocd"
@@ -63,7 +62,7 @@ type ClusterReconciler struct {
 //+kubebuilder:rbac:namespace=nautes,groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 
 func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	var requeueAfter = 60 * time.Second
+	var requeueAfter = common.GetReconcileTime()
 
 	namespacedName = req.NamespacedName
 	cluster, err := r.getClusterResource(ctx, namespacedName)

@@ -43,6 +43,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	common "github.com/nautes-labs/argo-operator/controllers/common"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -127,6 +129,7 @@ func (f *fakeController) GetClient() client.Client {
 }
 
 var _ = BeforeSuite(func() {
+	_ = os.Setenv(common.ReconcileTime, "3")
 	startClusterServer()
 	_ = ctrl.Log.WithName("BeforeSuite log")
 })

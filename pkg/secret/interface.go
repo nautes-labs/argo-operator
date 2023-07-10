@@ -14,6 +14,6 @@
 package secret
 
 type SecretOperator interface {
-	InitVault(config *VaultConfig) error
+	Init(secretConfig *SecretConfig) error
 	GetSecret(secretOptions SecretOptions) (*SecretData, error)
 }

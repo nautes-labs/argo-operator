@@ -27,7 +27,6 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	nautesconfigs "github.com/nautes-labs/pkg/pkg/nautesconfigs"
@@ -42,14 +41,14 @@ var (
 
 var _ = Describe("Cluster controller test cases", func() {
 	const (
-		timeout         = time.Second * 60
-		interval        = time.Second * 3
-		CLUSTER_ADDRESS = "https://kubernetes.default.svc"
+		timeout          = time.Second * 20
+		interval         = time.Second * 3
+		k8sDefaultServer = "https://kubernetes.default.svc"
+		k8sTestServer    = "https://kubernetes.test.svc"
 	)
 
 	var (
 		k8sClient    client.Client
-		gomockCtl    *gomock.Controller
 		fakeCtl      *fakeController
 		nautesConfig = &nautesconfigs.Config{
 			Git: nautesconfigs.GitRepo{
@@ -72,35 +71,32 @@ var _ = Describe("Cluster controller test cases", func() {
 	var (
 		clusterReponse = &argocd.ClusterResponse{
 			Name:   "argo-operator-test-vcluster",
-			Server: CLUSTER_ADDRESS,
+			Server: k8sDefaultServer,
 			ConnectionState: argocd.ConnectionState{
 				Status: "Successful",
 			},
 		}
 		clusterFailReponse = &argocd.ClusterResponse{
 			Name:   "argo-operator-test-vcluster",
-			Server: CLUSTER_ADDRESS,
+			Server: k8sDefaultServer,
 			ConnectionState: argocd.ConnectionState{
 				Status: "Fail",
 			},
 		}
 	)
 
-	BeforeEach(func() {
-		err := resourcev1alpha1.AddToScheme(scheme.Scheme)
-		Expect(err).NotTo(HaveOccurred())
-		gomockCtl = gomock.NewController(GinkgoT())
-	})
-
 	It("successfully create cluster to argocd", func() {
+		var err error
+
 		argocdAuth := argocd.NewMockAuthOperation(gomockCtl)
 		argocdAuth.EXPECT().GetPassword().Return("pass", nil).AnyTimes()
 		argocdAuth.EXPECT().Login().Return(nil).AnyTimes()
 
 		argocdCluster := argocd.NewMockClusterOperation(gomockCtl)
-		argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(nil, errNotFoundCluster).AnyTimes()
+		first := argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(nil, errNotFoundCluster)
+		argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(clusterReponse, nil).After(first)
 		argocdCluster.EXPECT().CreateCluster(gomock.Any()).Return(nil).AnyTimes()
-		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return(CLUSTER_ADDRESS, nil).AnyTimes()
+		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return(k8sDefaultServer, nil).AnyTimes()
 
 		argocd := &argocd.ArgocdClient{
 			ArgocdAuth:    argocdAuth,
@@ -108,20 +104,16 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("tokeeeen", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
-		// Initial fakeCtl controller instance
-		cfg, err := initialEnvTest()
-		Expect(err).ShouldNot(HaveOccurred())
-		fakeCtl = NewFakeController(cfg)
+		fakeCtl = NewFakeController()
 		k8sClient = fakeCtl.GetClient()
 		fakeCtl.startCluster(argocd, secret, nautesConfig)
 
 		// Resource
 		spec := resourcev1alpha1.ClusterSpec{
-			ApiServer:   CLUSTER_ADDRESS,
+			ApiServer:   k8sDefaultServer,
 			ClusterType: "virtual",
 			ClusterKind: "kubernetes",
 			HostCluster: "tenant1",
@@ -160,33 +152,33 @@ var _ = Describe("Cluster controller test cases", func() {
 
 		// Delete
 		By("Expected resource deletion succeeded")
+		cluster := &resourcev1alpha1.Cluster{}
+		err = k8sClient.Get(context.Background(), key, cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = k8sClient.Delete(context.Background(), cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+
 		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
-			err = k8sClient.Get(context.Background(), key, cluster)
-			if err == nil {
-				err = k8sClient.Delete(context.Background(), cluster)
-				if err == nil {
-					return true
-				}
-			}
-
-			return false
+			err := k8sClient.Get(context.Background(), key, cluster)
+			return err != nil
 		}, timeout, interval).Should(BeTrue())
 
 		fakeCtl.close()
 	})
 
 	It("failed to update cluster to argocd", func() {
+		var err error
+
 		argocdAuth := argocd.NewMockAuthOperation(gomockCtl)
 		argocdAuth.EXPECT().GetPassword().Return("pass", nil).AnyTimes()
 		argocdAuth.EXPECT().Login().Return(nil).AnyTimes()
 
 		argocdCluster := argocd.NewMockClusterOperation(gomockCtl)
-		first := argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(nil, errors.New("failed to get cluster info"))
-		argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(clusterFailReponse, nil).After(first).AnyTimes()
+		argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(clusterFailReponse, nil).AnyTimes()
 		argocdCluster.EXPECT().CreateCluster(gomock.Any()).Return(nil).AnyTimes()
 		argocdCluster.EXPECT().UpdateCluster(gomock.Any()).Return(errors.New("failed to update cluster")).AnyTimes()
-		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return(CLUSTER_ADDRESS, nil).AnyTimes()
+		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return(k8sDefaultServer, nil).AnyTimes()
 
 		argocd := &argocd.ArgocdClient{
 			ArgocdAuth:    argocdAuth,
@@ -194,20 +186,16 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("tokeeeen", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
-		// Initial fakeCtl controller instance
-		cfg, err := initialEnvTest()
-		Expect(err).ShouldNot(HaveOccurred())
-		fakeCtl = NewFakeController(cfg)
+		fakeCtl = NewFakeController()
 		k8sClient = fakeCtl.GetClient()
 		fakeCtl.startCluster(argocd, secret, nautesConfig)
 
 		// Resource
 		spec := resourcev1alpha1.ClusterSpec{
-			ApiServer:   CLUSTER_ADDRESS,
+			ApiServer:   k8sDefaultServer,
 			ClusterType: "virtual",
 			ClusterKind: "kubernetes",
 			HostCluster: "tenant1",
@@ -236,7 +224,7 @@ var _ = Describe("Cluster controller test cases", func() {
 		// Update
 		By("Expected the cluster is to be updated")
 		updateSpec := resourcev1alpha1.ClusterSpec{
-			ApiServer:   CLUSTER_ADDRESS,
+			ApiServer:   k8sDefaultServer,
 			ClusterType: "virtual",
 			ClusterKind: "kubernetes",
 			HostCluster: "tenant2",
@@ -263,21 +251,24 @@ var _ = Describe("Cluster controller test cases", func() {
 
 		// Delete
 		By("Expected resource deletion succeeded")
+		cluster := &resourcev1alpha1.Cluster{}
+		err = k8sClient.Get(context.Background(), key, cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = k8sClient.Delete(context.Background(), cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+
 		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
 			err = k8sClient.Get(context.Background(), key, cluster)
-			if err == nil {
-				err = k8sClient.Delete(context.Background(), cluster)
-				if err == nil {
-					return true
-				}
-			}
-
-			return false
+			return err != nil
 		}, timeout, interval).Should(BeTrue())
+
+		fakeCtl.close()
 	})
 
 	It("cluster validate error", func() {
+		var err error
+
 		argocdAuth := argocd.NewMockAuthOperation(gomockCtl)
 		argocdAuth.EXPECT().GetPassword().Return("pass", nil).AnyTimes()
 		argocdAuth.EXPECT().Login().Return(nil).AnyTimes()
@@ -289,16 +280,13 @@ var _ = Describe("Cluster controller test cases", func() {
 			ArgocdCluster: argocdCluster,
 		}
 
-		// Initial fakeCtl controller instance
-		cfg, err := initialEnvTest()
-		Expect(err).ShouldNot(HaveOccurred())
-		fakeCtl = NewFakeController(cfg)
+		fakeCtl = NewFakeController()
 		k8sClient = fakeCtl.GetClient()
 		fakeCtl.startCluster(argocd, nil, nautesConfig)
 
 		// Resource
 		spec := resourcev1alpha1.ClusterSpec{
-			ApiServer:   CLUSTER_ADDRESS,
+			ApiServer:   k8sDefaultServer,
 			ClusterType: "physical",
 			ClusterKind: "kubernetes",
 			HostCluster: "tenant1",
@@ -337,23 +325,23 @@ var _ = Describe("Cluster controller test cases", func() {
 
 		// Delete
 		By("Expected resource deletion succeeded")
+		cluster := &resourcev1alpha1.Cluster{}
+		err = k8sClient.Get(context.Background(), key, cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = k8sClient.Delete(context.Background(), cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+
 		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
 			err = k8sClient.Get(context.Background(), key, cluster)
-			if err == nil {
-				err = k8sClient.Delete(context.Background(), cluster)
-				if err == nil {
-					return true
-				}
-			}
-
-			return false
+			return err != nil
 		}, timeout, interval).Should(BeTrue())
 
 		fakeCtl.close()
 	})
 
 	It("when secret has change create cluster to argocd", func() {
+		var err error
 		argocdAuth := argocd.NewMockAuthOperation(gomockCtl)
 		argocdAuth.EXPECT().GetPassword().Return("pass", nil).AnyTimes()
 		argocdAuth.EXPECT().Login().Return(nil).AnyTimes()
@@ -362,7 +350,7 @@ var _ = Describe("Cluster controller test cases", func() {
 		secondGetCluster := argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(nil, errNotFoundCluster).AnyTimes().Times(2)
 		argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(clusterReponse, nil).AnyTimes().After(secondGetCluster)
 		argocdCluster.EXPECT().CreateCluster(gomock.Any()).Return(nil).AnyTimes()
-		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return("https://kubernetes.default.svc1", nil).AnyTimes()
+		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return(k8sTestServer, nil).AnyTimes()
 
 		argocd := &argocd.ArgocdClient{
 			ArgocdAuth:    argocdAuth,
@@ -370,21 +358,17 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
 		firstGetSecret := secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 1, Data: secretData}, nil)
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 2, Data: secretData}, nil).AnyTimes().After(firstGetSecret)
 
-		// Initial fakeCtl controller instance
-		cfg, err := initialEnvTest()
-		Expect(err).ShouldNot(HaveOccurred())
-		fakeCtl = NewFakeController(cfg)
+		fakeCtl = NewFakeController()
 		k8sClient = fakeCtl.GetClient()
 		fakeCtl.startCluster(argocd, secret, nautesConfig)
 
 		// Resource
 		spec := resourcev1alpha1.ClusterSpec{
-			ApiServer:   CLUSTER_ADDRESS,
+			ApiServer:   k8sDefaultServer,
 			ClusterType: "virtual",
 			ClusterKind: "kubernetes",
 			HostCluster: "tenant1",
@@ -415,7 +399,7 @@ var _ = Describe("Cluster controller test cases", func() {
 		// Update
 		By("Expected the cluster is to be updated")
 		updateSpec := resourcev1alpha1.ClusterSpec{
-			ApiServer:   CLUSTER_ADDRESS,
+			ApiServer:   k8sDefaultServer,
 			ClusterType: "virtual",
 			ClusterKind: "kubernetes",
 			HostCluster: "tenant2",
@@ -445,40 +429,46 @@ var _ = Describe("Cluster controller test cases", func() {
 
 		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
-			k8sClient.Get(context.Background(), key, cluster)
-			condition := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
-			return len(condition) == 1
+			err := k8sClient.Get(context.Background(), key, cluster)
+			Expect(err).ShouldNot(HaveOccurred())
+			conditions := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
+			if len(conditions) > 0 {
+				return conditions[0].Status == "True"
+			}
+
+			return false
 		}, timeout, interval).Should(BeTrue())
 
 		// Delete
 		By("Expected resource deletion succeeded")
+		cluster := &resourcev1alpha1.Cluster{}
+		err = k8sClient.Get(context.Background(), key, cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = k8sClient.Delete(context.Background(), cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+
 		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
 			err = k8sClient.Get(context.Background(), key, cluster)
-			if err == nil {
-				err = k8sClient.Delete(context.Background(), cluster)
-				if err == nil {
-					return true
-				}
-			}
-
-			return false
+			return err != nil
 		}, timeout, interval).Should(BeTrue())
 
 		fakeCtl.close()
 	})
 
 	It("update resource successfully update cluster to argocd", func() {
+		var err error
+
 		argocdAuth := argocd.NewMockAuthOperation(gomockCtl)
 		argocdAuth.EXPECT().GetPassword().Return("pass", nil).AnyTimes()
 		argocdAuth.EXPECT().Login().Return(nil).AnyTimes()
 
 		argocdCluster := argocd.NewMockClusterOperation(gomockCtl)
-		firstGetCluster := argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(nil, errNotFoundCluster)
-		argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(clusterFailReponse, nil).AnyTimes().After(firstGetCluster)
+		secondGetCluster := argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(nil, errNotFoundCluster).AnyTimes().Times(2)
+		argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(clusterReponse, nil).AnyTimes().After(secondGetCluster)
 		argocdCluster.EXPECT().CreateCluster(gomock.Any()).Return(nil).AnyTimes()
 		argocdCluster.EXPECT().UpdateCluster(gomock.Any()).Return(nil).AnyTimes()
-		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return("https://kubernetes.default.svc1", nil).AnyTimes()
+		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return(k8sTestServer, nil).AnyTimes()
 
 		argocd := &argocd.ArgocdClient{
 			ArgocdAuth:    argocdAuth,
@@ -486,20 +476,16 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
-		// Initial fakeCtl controller instance
-		cfg, err := initialEnvTest()
-		Expect(err).ShouldNot(HaveOccurred())
-		fakeCtl = NewFakeController(cfg)
+		fakeCtl = NewFakeController()
 		k8sClient = fakeCtl.GetClient()
 		fakeCtl.startCluster(argocd, secret, nautesConfig)
 
 		// Resource
 		spec := resourcev1alpha1.ClusterSpec{
-			ApiServer:   CLUSTER_ADDRESS,
+			ApiServer:   k8sDefaultServer,
 			ClusterType: "virtual",
 			ClusterKind: "kubernetes",
 			HostCluster: "tenant1",
@@ -529,14 +515,19 @@ var _ = Describe("Cluster controller test cases", func() {
 		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
 			k8sClient.Get(context.Background(), key, cluster)
-			condition := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
-			return len(condition) == 1
+			Expect(err).ShouldNot(HaveOccurred())
+			conditions := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
+			if len(conditions) > 0 {
+				return conditions[0].Status == "True"
+			}
+
+			return false
 		}, timeout, interval).Should(BeTrue())
 
 		// Update
 		By("Expected the cluster is to be updated")
 		updateSpec := resourcev1alpha1.ClusterSpec{
-			ApiServer:   "https://kubernetes.default.svc1",
+			ApiServer:   k8sTestServer,
 			ClusterKind: "kubernetes",
 			ClusterType: "virtual",
 			HostCluster: "tenant2",
@@ -558,37 +549,44 @@ var _ = Describe("Cluster controller test cases", func() {
 		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
 			k8sClient.Get(context.Background(), key, cluster)
-			condition := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
-			return len(condition) == 1
+			Expect(err).ShouldNot(HaveOccurred())
+			conditions := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
+			if len(conditions) > 0 {
+				return conditions[0].Status == "True"
+			}
+
+			return false
 		}, timeout, interval).Should(BeTrue())
 
 		// Delete
 		By("Expected resource deletion succeeded")
+		cluster := &resourcev1alpha1.Cluster{}
+		err = k8sClient.Get(context.Background(), key, cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = k8sClient.Delete(context.Background(), cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+
 		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
 			err = k8sClient.Get(context.Background(), key, cluster)
-			if err == nil {
-				err = k8sClient.Delete(context.Background(), cluster)
-				if err == nil {
-					return true
-				}
-			}
-
-			return false
+			return err != nil
 		}, timeout, interval).Should(BeTrue())
 
 		fakeCtl.close()
 	})
 
 	It("update resource successfully create cluster to argocd", func() {
+		var err error
+
 		argocdAuth := argocd.NewMockAuthOperation(gomockCtl)
 		argocdAuth.EXPECT().GetPassword().Return("pass", nil).AnyTimes()
 		argocdAuth.EXPECT().Login().Return(nil).AnyTimes()
 
 		argocdCluster := argocd.NewMockClusterOperation(gomockCtl)
-		argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(nil, errNotFoundCluster).AnyTimes()
+		firstGetClusterInfo := argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(nil, errNotFoundCluster)
+		argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(clusterReponse, nil).After(firstGetClusterInfo).AnyTimes()
 		argocdCluster.EXPECT().CreateCluster(gomock.Any()).Return(nil).AnyTimes()
-		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return("https://kubernetes.default.svc1", nil).AnyTimes()
+		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return(k8sTestServer, nil).AnyTimes()
 
 		argocd := &argocd.ArgocdClient{
 			ArgocdAuth:    argocdAuth,
@@ -596,20 +594,17 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
+
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
-		// Initial fakeCtl controller instance
-		cfg, err := initialEnvTest()
-		Expect(err).ShouldNot(HaveOccurred())
-		fakeCtl = NewFakeController(cfg)
+		fakeCtl = NewFakeController()
 		k8sClient = fakeCtl.GetClient()
 		fakeCtl.startCluster(argocd, secret, nautesConfig)
 
 		// Resource
 		spec := resourcev1alpha1.ClusterSpec{
-			ApiServer:   CLUSTER_ADDRESS,
+			ApiServer:   k8sDefaultServer,
 			ClusterType: "virtual",
 			ClusterKind: "kubernetes",
 			HostCluster: "tenant1",
@@ -639,14 +634,19 @@ var _ = Describe("Cluster controller test cases", func() {
 		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
 			k8sClient.Get(context.Background(), key, cluster)
-			condition := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
-			return len(condition) == 1
+			Expect(err).ShouldNot(HaveOccurred())
+			conditions := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
+			if len(conditions) > 0 {
+				return conditions[0].Status == "True"
+			}
+
+			return false
 		}, timeout, interval).Should(BeTrue())
 
 		// Update
 		By("Expected the cluster is to be updated")
 		updateSpec := resourcev1alpha1.ClusterSpec{
-			ApiServer:   "https://kubernetes.default.svc1",
+			ApiServer:   k8sTestServer,
 			ClusterType: "virtual",
 			ClusterKind: "kubernetes",
 			HostCluster: "tenant2",
@@ -668,39 +668,44 @@ var _ = Describe("Cluster controller test cases", func() {
 		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
 			k8sClient.Get(context.Background(), key, cluster)
-			condition := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
-			return len(condition) == 1
+			Expect(err).ShouldNot(HaveOccurred())
+			conditions := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
+			if len(conditions) > 0 {
+				return conditions[0].Status == "True"
+			}
+
+			return false
 		}, timeout, interval).Should(BeTrue())
 
 		// Delete
 		By("Expected resource deletion succeeded")
+		cluster := &resourcev1alpha1.Cluster{}
+		err = k8sClient.Get(context.Background(), key, cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = k8sClient.Delete(context.Background(), cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+
 		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
 			err = k8sClient.Get(context.Background(), key, cluster)
-			if err == nil {
-				err = k8sClient.Delete(context.Background(), cluster)
-				if err == nil {
-					return true
-				}
-			}
-
-			return false
+			return err != nil
 		}, timeout, interval).Should(BeTrue())
 
 		fakeCtl.close()
 	})
 
 	It("failed to save cluster to argocd", func() {
-		time.Sleep(time.Second * 3)
+		var err error
 
 		argocdAuth := argocd.NewMockAuthOperation(gomockCtl)
 		argocdAuth.EXPECT().GetPassword().Return("pass", nil).AnyTimes()
 		argocdAuth.EXPECT().Login().Return(nil).AnyTimes()
 
 		argocdCluster := argocd.NewMockClusterOperation(gomockCtl)
-		argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(nil, errNotFoundCluster).AnyTimes()
+		first := argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(nil, errNotFoundCluster)
+		argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(clusterReponse, nil).After(first)
 		argocdCluster.EXPECT().CreateCluster(gomock.Any()).Return(errSyncCluster).AnyTimes()
-		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return(CLUSTER_ADDRESS, nil).AnyTimes()
+		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return(k8sDefaultServer, nil).AnyTimes()
 
 		argocd := &argocd.ArgocdClient{
 			ArgocdAuth:    argocdAuth,
@@ -708,20 +713,17 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("tokeeeen", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
+
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
-		// Initial fakeCtl controller instance
-		cfg, err := initialEnvTest()
-		Expect(err).ShouldNot(HaveOccurred())
-		fakeCtl = NewFakeController(cfg)
+		fakeCtl = NewFakeController()
 		k8sClient = fakeCtl.GetClient()
 		fakeCtl.startCluster(argocd, secret, nautesConfig)
 
 		// Resource
 		spec := resourcev1alpha1.ClusterSpec{
-			ApiServer:   CLUSTER_ADDRESS,
+			ApiServer:   k8sDefaultServer,
 			ClusterType: "virtual",
 			ClusterKind: "kubernetes",
 			HostCluster: "tenant1",
@@ -758,32 +760,31 @@ var _ = Describe("Cluster controller test cases", func() {
 
 		// Delete
 		By("Expected resource deletion succeeded")
+		cluster := &resourcev1alpha1.Cluster{}
+		err = k8sClient.Get(context.Background(), key, cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = k8sClient.Delete(context.Background(), cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+
 		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
 			err = k8sClient.Get(context.Background(), key, cluster)
-			if err == nil {
-				err = k8sClient.Delete(context.Background(), cluster)
-				if err == nil {
-					return true
-				}
-			}
-
-			return false
+			return err != nil
 		}, timeout, interval).Should(BeTrue())
 
 		fakeCtl.close()
 	})
 
-	It("unable to get secret data", func() {
+	It("failed to get secret data", func() {
+		var err error
+
 		argocdAuth := argocd.NewMockAuthOperation(gomockCtl)
 		argocdAuth.EXPECT().GetPassword().Return("pass", nil).AnyTimes()
 		argocdAuth.EXPECT().Login().Return(nil).AnyTimes()
 
 		argocdCluster := argocd.NewMockClusterOperation(gomockCtl)
-		firstGetCluster := argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(nil, errNotFoundCluster).AnyTimes()
-		argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(clusterReponse, nil).AnyTimes().After(firstGetCluster)
 		argocdCluster.EXPECT().CreateCluster(gomock.Any()).Return(nil).AnyTimes()
-		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return(CLUSTER_ADDRESS, nil).AnyTimes()
+		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return(k8sDefaultServer, nil).AnyTimes()
 
 		argocd := &argocd.ArgocdClient{
 			ArgocdAuth:    argocdAuth,
@@ -791,20 +792,17 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("tokeeeen", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
+
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{}, errGetSecret).AnyTimes()
 
-		// Initial fakeCtl controller instance
-		cfg, err := initialEnvTest()
-		Expect(err).ShouldNot(HaveOccurred())
-		fakeCtl = NewFakeController(cfg)
+		fakeCtl = NewFakeController()
 		k8sClient = fakeCtl.GetClient()
 		fakeCtl.startCluster(argocd, secret, nautesConfig)
 
 		// Resource
 		spec := resourcev1alpha1.ClusterSpec{
-			ApiServer:   CLUSTER_ADDRESS,
+			ApiServer:   k8sDefaultServer,
 			ClusterType: "virtual",
 			ClusterKind: "kubernetes",
 			HostCluster: "tenant1",
@@ -836,20 +834,36 @@ var _ = Describe("Cluster controller test cases", func() {
 			return cluster.Status.Sync2ArgoStatus == nil
 		}, timeout, interval).Should(BeTrue())
 
+		// Delete
+		By("Expected resource deletion succeeded")
+		cluster := &resourcev1alpha1.Cluster{}
+		err = k8sClient.Get(context.Background(), key, cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = k8sClient.Delete(context.Background(), cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+
+		Eventually(func() bool {
+			cluster := &resourcev1alpha1.Cluster{}
+			err = k8sClient.Get(context.Background(), key, cluster)
+			return err != nil
+		}, timeout, interval).Should(BeTrue())
+
 		defer fakeCtl.close()
 	})
 
-	It("failed to update cluster", func() {
+	It("failed to create cluster to argocd", func() {
+		var err error
+
 		argocdAuth := argocd.NewMockAuthOperation(gomockCtl)
 		argocdAuth.EXPECT().GetPassword().Return("pass", nil).AnyTimes()
 		argocdAuth.EXPECT().Login().Return(nil).AnyTimes()
 
 		argocdCluster := argocd.NewMockClusterOperation(gomockCtl)
-		firstGetCluster := argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(nil, errNotFoundCluster).AnyTimes()
-		argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(clusterReponse, nil).AnyTimes().After(firstGetCluster)
+		firstGetClusterInfo := argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(nil, errNotFoundCluster)
+		argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(clusterReponse, nil).After(firstGetClusterInfo).AnyTimes()
 		firstCreateCluster := argocdCluster.EXPECT().CreateCluster(gomock.Any()).Return(nil).AnyTimes()
 		argocdCluster.EXPECT().CreateCluster(gomock.Any()).Return(errSyncCluster).After(firstCreateCluster).AnyTimes()
-		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return(CLUSTER_ADDRESS, errDeleteCluster).AnyTimes()
+		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return(k8sDefaultServer, nil).AnyTimes()
 
 		argocd := &argocd.ArgocdClient{
 			ArgocdAuth:    argocdAuth,
@@ -857,20 +871,17 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
+
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
-		// Initial fakeCtl controller instance
-		cfg, err := initialEnvTest()
-		Expect(err).ShouldNot(HaveOccurred())
-		fakeCtl = NewFakeController(cfg)
+		fakeCtl = NewFakeController()
 		k8sClient = fakeCtl.GetClient()
 		fakeCtl.startCluster(argocd, secret, nautesConfig)
 
 		// Resource
 		spec := resourcev1alpha1.ClusterSpec{
-			ApiServer:   CLUSTER_ADDRESS,
+			ApiServer:   k8sDefaultServer,
 			ClusterType: "virtual",
 			ClusterKind: "kubernetes",
 			HostCluster: "tenant1",
@@ -899,9 +910,14 @@ var _ = Describe("Cluster controller test cases", func() {
 		By("Expecting cluster added argocd")
 		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
-			k8sClient.Get(context.Background(), key, cluster)
-			condition := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
-			return len(condition) == 1
+			err := k8sClient.Get(context.Background(), key, cluster)
+			Expect(err).ShouldNot(HaveOccurred())
+			conditions := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
+			if len(conditions) > 0 {
+				return conditions[0].Status == "True"
+			}
+
+			return false
 		}, timeout, interval).Should(BeTrue())
 
 		// Update
@@ -929,40 +945,44 @@ var _ = Describe("Cluster controller test cases", func() {
 		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
 			k8sClient.Get(context.Background(), key, cluster)
-			condition := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
-			return len(condition) != 0
+			Expect(err).ShouldNot(HaveOccurred())
+			conditions := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
+			if len(conditions) > 0 {
+				return conditions[0].Status == "True"
+			}
+			return false
 		}, timeout, interval).Should(BeTrue())
 
 		// Delete
 		By("Expected resource deletion succeeded")
-		Eventually(func() error {
-			cluster := &resourcev1alpha1.Cluster{}
-			err := k8sClient.Get(context.Background(), key, cluster)
-			Expect(err).ShouldNot(HaveOccurred())
-			return k8sClient.Delete(context.Background(), cluster)
-		}, timeout, interval).Should(Succeed())
+		cluster := &resourcev1alpha1.Cluster{}
+		err = k8sClient.Get(context.Background(), key, cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = k8sClient.Delete(context.Background(), cluster)
+		Expect(err).ShouldNot(HaveOccurred())
 
-		By("Expected resource deletion finished")
-		Eventually(func() error {
+		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
 			err = k8sClient.Get(context.Background(), key, cluster)
-			return err
-		}, timeout, interval).Should(Succeed())
+			return err != nil
+		}, timeout, interval).Should(BeTrue())
 
 		fakeCtl.close()
 	})
 
-	It("update resource failed to save cluster to argocd", func() {
+	It("failed to save cluster to argocd while updating resources", func() {
+		var err error
+
 		argocdAuth := argocd.NewMockAuthOperation(gomockCtl)
 		argocdAuth.EXPECT().GetPassword().Return("pass", nil).AnyTimes()
 		argocdAuth.EXPECT().Login().Return(nil).AnyTimes()
 
 		argocdCluster := argocd.NewMockClusterOperation(gomockCtl)
-		firstGetCluster := argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(nil, errNotFoundCluster).AnyTimes()
-		argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(clusterReponse, nil).AnyTimes().After(firstGetCluster)
+		secondGetCluster := argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(nil, errNotFoundCluster).Times(2)
+		argocdCluster.EXPECT().GetClusterInfo(gomock.Any()).Return(clusterReponse, nil).AnyTimes().After(secondGetCluster)
 		firstCreateCluster := argocdCluster.EXPECT().CreateCluster(gomock.Any()).Return(nil).AnyTimes()
 		argocdCluster.EXPECT().CreateCluster(gomock.Any()).Return(errSyncCluster).After(firstCreateCluster).AnyTimes()
-		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return(CLUSTER_ADDRESS, nil).AnyTimes()
+		argocdCluster.EXPECT().DeleteCluster(gomock.Any()).Return(k8sDefaultServer, nil).AnyTimes()
 
 		argocd := &argocd.ArgocdClient{
 			ArgocdAuth:    argocdAuth,
@@ -970,20 +990,17 @@ var _ = Describe("Cluster controller test cases", func() {
 		}
 
 		secret := pkgsecret.NewMockSecretOperator(gomockCtl)
-		secret.EXPECT().InitVault(gomock.Any()).Return(nil).AnyTimes()
-		secret.EXPECT().GetToken(gomock.Any()).Return("token", nil).AnyTimes()
+		secret.EXPECT().Init(gomock.Any()).Return(nil).AnyTimes()
+
 		secret.EXPECT().GetSecret(gomock.Any()).Return(&pkgsecret.SecretData{ID: 1, Data: secretData}, nil).AnyTimes()
 
-		// Initial fakeCtl controller instance
-		cfg, err := initialEnvTest()
-		Expect(err).ShouldNot(HaveOccurred())
-		fakeCtl = NewFakeController(cfg)
+		fakeCtl = NewFakeController()
 		k8sClient = fakeCtl.GetClient()
 		fakeCtl.startCluster(argocd, secret, nautesConfig)
 
 		// Resource
 		spec := resourcev1alpha1.ClusterSpec{
-			ApiServer:   CLUSTER_ADDRESS,
+			ApiServer:   k8sDefaultServer,
 			ClusterKind: "kubernetes",
 			ClusterType: "virtual",
 			HostCluster: "tenant1",
@@ -1013,8 +1030,12 @@ var _ = Describe("Cluster controller test cases", func() {
 		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
 			k8sClient.Get(context.Background(), key, cluster)
-			condition := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
-			return len(condition) == 1
+			Expect(err).ShouldNot(HaveOccurred())
+			conditions := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
+			if len(conditions) > 0 {
+				return conditions[0].Status == "True"
+			}
+			return false
 		}, timeout, interval).Should(BeTrue())
 
 		// Update
@@ -1042,25 +1063,27 @@ var _ = Describe("Cluster controller test cases", func() {
 		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
 			k8sClient.Get(context.Background(), key, cluster)
-			condition := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
-			return len(condition) == 1
+			Expect(err).ShouldNot(HaveOccurred())
+			conditions := cluster.Status.GetConditions(map[string]bool{ClusterConditionType: true})
+			if len(conditions) > 0 {
+				return conditions[0].Status == "True"
+			}
+			return false
 		}, timeout, interval).Should(BeTrue())
 
 		// Delete
 		By("Expected resource deletion succeeded")
-		Eventually(func() error {
-			cluster := &resourcev1alpha1.Cluster{}
-			err := k8sClient.Get(context.Background(), key, cluster)
-			Expect(err).ShouldNot(HaveOccurred())
-			return k8sClient.Delete(context.Background(), cluster)
-		}, timeout, interval).Should(Succeed())
+		cluster := &resourcev1alpha1.Cluster{}
+		err = k8sClient.Get(context.Background(), key, cluster)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = k8sClient.Delete(context.Background(), cluster)
+		Expect(err).ShouldNot(HaveOccurred())
 
-		By("Expected resource deletion finished")
-		Eventually(func() error {
+		Eventually(func() bool {
 			cluster := &resourcev1alpha1.Cluster{}
 			err = k8sClient.Get(context.Background(), key, cluster)
-			return err
-		}, timeout, interval).Should(Succeed())
+			return err != nil
+		}, timeout, interval).Should(BeTrue())
 
 		fakeCtl.close()
 	})
