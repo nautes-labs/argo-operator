@@ -17,7 +17,6 @@ package cluster
 import (
 	"context"
 	"fmt"
-	"time"
 
 	common "github.com/nautes-labs/argo-operator/controllers/common"
 	argocd "github.com/nautes-labs/argo-operator/pkg/argocd"
@@ -55,15 +54,15 @@ type ClusterReconciler struct {
 	GlobalConfigName      string
 }
 
-//+kubebuilder:rbac:groups=nautes.resource.nautes.io,resources=clusters;deploymentruntimes;environments;projectpipelineruntimes,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=nautes.resource.nautes.io,resources=clusters/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=nautes.resource.nautes.io,resources=clusters/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:groups=nautes.resource.nautes.io,resources=clusters;deploymentruntimes;environments;projectpipelineruntimes,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:groups=nautes.resource.nautes.io,resources=clusters/status,verbs=get;update;patch
+//+kubebuilder:groups=nautes.resource.nautes.io,resources=clusters/finalizers,verbs=update
+//+kubebuilder:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 
 func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	var requeueAfter = 60 * time.Second
+	var requeueAfter = common.GetReconcileTime()
 
 	namespacedName = req.NamespacedName
 	cluster, err := r.getClusterResource(ctx, namespacedName)

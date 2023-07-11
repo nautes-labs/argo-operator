@@ -17,7 +17,6 @@ package coderepo
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/go-logr/logr"
 	common "github.com/nautes-labs/argo-operator/controllers/common"
@@ -48,14 +47,14 @@ type CodeRepoReconciler struct {
 	GlobalConfigName      string
 }
 
-//+kubebuilder:rbac:groups=nautes.resource.nautes.io,resources=coderepoes;products;coderepoproviders,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=nautes.resource.nautes.io,resources=coderepoes/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=nautes.resource.nautes.io,resources=coderepoes/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:groups=nautes.resource.nautes.io,resources=coderepoes;products;coderepoproviders,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:groups=nautes.resource.nautes.io,resources=coderepoes/status,verbs=get;update;patch
+//+kubebuilder:groups=nautes.resource.nautes.io,resources=coderepoes/finalizers,verbs=update
+//+kubebuilder:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 
 func (r *CodeRepoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	var requeueAfter = 60 * time.Second
+	var requeueAfter = common.GetReconcileTime()
 	var codeRepo = &resourcev1alpha1.CodeRepo{}
 
 	err := r.Get(ctx, req.NamespacedName, codeRepo)

@@ -20,8 +20,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/golang/mock/gomock"
 	argocd "github.com/nautes-labs/argo-operator/pkg/argocd"
 	secret "github.com/nautes-labs/argo-operator/pkg/secret"
@@ -36,37 +36,22 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	common "github.com/nautes-labs/argo-operator/controllers/common"
 	//+kubebuilder:scaffold:imports
 )
 
 var (
 	testEnv        *envtest.Environment
-	k8sClient      client.Client
 	gomockCtl      *gomock.Controller
 	testKubeconfig *rest.Config
-	fakeCtl        *fakeController
-	nautesConfig   = &nautesconfigs.Config{
-		Git: nautesconfigs.GitRepo{
-			Addr:    "https://gitlab.bluzin.io",
-			GitType: "gitlab",
-		},
-		Secret: nautesconfigs.SecretRepo{
-			RepoType: "vault",
-			Vault: nautesconfigs.Vault{
-				Addr:      "https://vault.bluzin.io:8200",
-				MountPath: "deployment2-runtime",
-				ProxyAddr: "https://vault.bluzin.io:8000",
-				Token:     "hvs.UseDJnYBNykFeGWlh7YAnzjC",
-			},
-		},
-	}
-	secretData = "apiVersion: v1\nclusters:\n- cluster:\n    server: https://127.0.0.1:6443\n    insecure-skip-tls-verify: true\n  name: local\ncontexts:\n- context:\n    cluster: local\n    namespace: default\n    user: user\n  name: pipeline1-runtime\ncurrent-context: pipeline1-runtime\nkind: Config\npreferences: {}\nusers:\n- name: user\n  user:\n    client-certificate-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJrRENDQVRlZ0F3SUJBZ0lJS005ZXhoLzlncXd3Q2dZSUtvWkl6ajBFQXdJd0l6RWhNQjhHQTFVRUF3d1kKYXpOekxXTnNhV1Z1ZEMxallVQXhOalUyTXprNU5UYzFNQjRYRFRJeU1EWXlPREEyTlRrek5Wb1hEVEl6TURZeQpPREEyTlRrek5Wb3dNREVYTUJVR0ExVUVDaE1PYzNsemRHVnRPbTFoYzNSbGNuTXhGVEFUQmdOVkJBTVRESE41CmMzUmxiVHBoWkcxcGJqQlpNQk1HQnlxR1NNNDlBZ0VHQ0NxR1NNNDlBd0VIQTBJQUJMNEJ3TDFBMVhYaStTcm8KYlJRSklFS3FhMlUycEZKV2NUcWJ1SmtKdVp5ZDBrdFBUOHhscmVoQ1phUzhRajFHdVVvWmNBM1A5eE12dVBWTgovTUx6UGVXalNEQkdNQTRHQTFVZER3RUIvd1FFQXdJRm9EQVRCZ05WSFNVRUREQUtCZ2dyQmdFRkJRY0RBakFmCkJnTlZIU01FR0RBV2dCU3VTbUJQeFRmdHVoSXBHczBpSjRSd0MyVVY5VEFLQmdncWhrak9QUVFEQWdOSEFEQkUKQWlCckF5S2lNaWZUTUs3MThpd0hkVGZxUFI1TU96QW9OTjVvajZDak9uSzZtUUlnZG5HNFJQVjJtYTQ4R2FmQQovVXJUeEV3R0g3WVcwQ3VvUzZjL0tjWU5RbjA9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0KLS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJkekNDQVIyZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWpNU0V3SHdZRFZRUUREQmhyTTNNdFkyeHAKWlc1MExXTmhRREUyTlRZek9UazFOelV3SGhjTk1qSXdOakk0TURZMU9UTTFXaGNOTXpJd05qSTFNRFkxT1RNMQpXakFqTVNFd0h3WURWUVFEREJock0zTXRZMnhwWlc1MExXTmhRREUyTlRZek9UazFOelV3V1RBVEJnY3Foa2pPClBRSUJCZ2dxaGtqT1BRTUJCd05DQUFROFdnVHJ6cDNkZVNlMFlVTTNIamhQZGU2VWRoNGN2L0h2RStTci9BcDQKVGxnc2srSVcwSG5jSHoyVXQ2c0lXMkRRenNVMnJyMGZXZ0pmVlNZendoS0NvMEl3UURBT0JnTlZIUThCQWY4RQpCQU1DQXFRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVXJrcGdUOFUzN2JvU0tSck5JaWVFCmNBdGxGZlV3Q2dZSUtvWkl6ajBFQXdJRFNBQXdSUUlnSGJ3aFdLQ2Jxa3IxcEFRdk04bGtrNC9Pc0hiWVZZTEMKVVo5Q1lmVWx1bE1DSVFEcW9TVVBkb3F0cUpTRnZ2bnkxQjBVeXBkRWRzemMzczBuSk5PekhEdU12dz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K\n    client-key-data: LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSVBKZmQvVEx0MnZSczJEOHlWVklTV0xSL3NHVm1ZbjRvNjFMVkNMb29VZUtvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFdmdIQXZVRFZkZUw1S3VodEZBa2dRcXByWlRha1VsWnhPcHU0bVFtNW5KM1NTMDlQekdXdAo2RUpscEx4Q1BVYTVTaGx3RGMvM0V5KzQ5VTM4d3ZNOTVRPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo=\n"
 )
 
 func TestAPIs(t *testing.T) {
@@ -78,6 +63,7 @@ type fakeController struct {
 	k8sManager manager.Manager
 	ctx        context.Context
 	cancel     context.CancelFunc
+	waitClose  chan bool
 }
 
 func NewFakeController() *fakeController {
@@ -98,30 +84,44 @@ func NewFakeController() *fakeController {
 		k8sManager: k8sManager,
 		ctx:        ctx,
 		cancel:     cancel,
+		waitClose:  make(chan bool),
+	}
+}
+
+func NewReconciler(scheme *runtime.Scheme, k8sClient client.Client, argocd *argocd.ArgocdClient, secret secret.SecretOperator, log logr.Logger) *CodeRepoReconciler {
+	return &CodeRepoReconciler{
+		Scheme: scheme,
+		Client: k8sClient,
+		Argocd: argocd,
+		Secret: secret,
+		Log:    log,
 	}
 }
 
 func (f *fakeController) startCodeRepo(argocd *argocd.ArgocdClient, secret secret.SecretOperator, config *nautesconfigs.Config) {
-	if f.k8sManager != nil {
-		(&CodeRepoReconciler{
-			Scheme: f.k8sManager.GetScheme(),
-			Client: f.GetClient(),
-			Argocd: argocd,
-			Secret: secret,
-			Log:    ctrl.Log.WithName("codeRepo controllertest log"),
-		}).SetupWithManager(f.k8sManager)
+	scheme := f.k8sManager.GetScheme()
+	k8sClient := f.k8sManager.GetClient()
+	log := ctrl.Log.WithName("codeRepo controller test log")
+	reconciler := NewReconciler(scheme, k8sClient, argocd, secret, log)
+	reconciler.SetupWithManager(f.k8sManager)
 
-		go func() {
-			defer GinkgoRecover()
-			err := f.k8sManager.Start(f.ctx)
-			Expect(err).ShouldNot(HaveOccurred())
+	go func() {
+		defer GinkgoRecover()
+
+		defer func() {
+			f.waitClose <- true
 		}()
-	}
+
+		err := f.k8sManager.Start(f.ctx)
+		Expect(err).ShouldNot(HaveOccurred())
+	}()
 }
 
 func (f *fakeController) close() {
 	f.cancel()
-	time.Sleep(5 * time.Second)
+	fmt.Println("closing")
+	message := <-f.waitClose
+	fmt.Println("Have closed Controller", message)
 }
 
 func (f *fakeController) GetClient() client.Client {
@@ -129,6 +129,7 @@ func (f *fakeController) GetClient() client.Client {
 }
 
 var _ = BeforeSuite(func() {
+	_ = os.Setenv(common.ReconcileTime, "3")
 	startClusterServer()
 	_ = ctrl.Log.WithName("BeforeSuite log")
 })
