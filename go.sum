@@ -992,6 +992,8 @@ github.com/nautes-labs/pkg v0.3.4-0.20230718062633-e91f11b0c25c h1:4KatuHlrKZYv0
 github.com/nautes-labs/pkg v0.3.4-0.20230718062633-e91f11b0c25c/go.mod h1:u8Zni0Jy9uzjNv/PWQ6xGNFGQVAhECP7h2HPY9xi9Ks=
 github.com/nautes-labs/pkg v0.3.4-0.20230721021338-6c6d7e6ed549 h1:q8G0V2YQrdhf8dPuSnr6/f+HQnSQU3koxFm/e3iZVWg=
 github.com/nautes-labs/pkg v0.3.4-0.20230721021338-6c6d7e6ed549/go.mod h1:u8Zni0Jy9uzjNv/PWQ6xGNFGQVAhECP7h2HPY9xi9Ks=
+github.com/nautes-labs/pkg v0.3.6 h1:v415TrKc7V/+mvddc+KK2QWjLMU+gpZ5M+oZG+ojQzU=
+github.com/nautes-labs/pkg v0.3.6/go.mod h1:u8Zni0Jy9uzjNv/PWQ6xGNFGQVAhECP7h2HPY9xi9Ks=
 github.com/ncw/swift v1.0.47/go.mod h1:23YIA4yWVnGwv2dQlN4bB7egfYX6YLn0Yo/S6zZO/ZM=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
